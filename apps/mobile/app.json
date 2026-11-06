@@ -1,0 +1,55 @@
+{
+  "expo": {
+    "name": "Timepeace",
+    "slug": "timepeace",
+    "scheme": "timepeace",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.timepeace.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Timepeace uses the camera to photograph receipts and job-site progress.",
+        "NSPhotoLibraryUsageDescription": "Timepeace lets you attach receipt photos from your library.",
+        "NSLocationWhenInUseUsageDescription": "Timepeace records your location when you start and stop a task so your manager can confirm site time."
+      }
+    },
+    "android": {
+      "package": "com.timepeace.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": ["CAMERA", "ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Timepeace uses the camera to photograph receipts and job-site progress.",
+          "photosPermission": "Timepeace lets you attach receipt photos from your library."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Timepeace records your location when you start and stop a task so your manager can confirm site time."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
