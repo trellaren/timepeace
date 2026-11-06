@@ -74,7 +74,7 @@ const org = await prisma.$transaction(async (tx) => {
       payPeriodType: payPeriod,
       payPeriodAnchor: dbDate(startOfWeek(today, weekStartsOn)),
       weekStartsOn,
-      overtimeRules: { ...overtime },
+      overtimeRules: { ...overtime, weekStartsOn },
     },
   });
   await tx.costCode.createMany({ data: COST_CODES.map(([code, label]) => ({ orgId: org.id, code, name: label })) });
