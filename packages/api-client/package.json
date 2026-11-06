@@ -1,0 +1,20 @@
+{
+  "name": "@timepeace/api-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "dependencies": {
+    "@trpc/client": "11.24.0",
+    "@trpc/tanstack-react-query": "11.24.0",
+    "@tanstack/react-query": "^5.90.0",
+    "superjson": "^2.2.6"
+  },
+  "devDependencies": {
+    "@timepeace/api": "workspace:*"
+  },
+  "peerDependencies": { "react": ">=19" }
+}
