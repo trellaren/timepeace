@@ -14,6 +14,22 @@ export interface AuthInfo {
 
 export interface Context {
   auth: AuthInfo | null;
+  /** Client IP, for rate limiting. Absent in direct (test) callers. */
+  ip?: string;
+}
+
+/**
+ * The client's IP. On Vercel the proxy sets x-vercel-forwarded-for / x-real-ip and overwrites
+ * client-supplied values, so they can be trusted there. Anywhere else, use the socket address
+ * so a client can't pick its own IP with a header.
+ */
+export function clientIp(req: Pick<FastifyRequest, "headers" | "ip">): string {
+  if (process.env.VERCEL) {
+    const h = req.headers["x-vercel-forwarded-for"] ?? req.headers["x-real-ip"] ?? req.headers["x-forwarded-for"];
+    const v = (Array.isArray(h) ? h[0] : h)?.split(",")[0]?.trim();
+    if (v) return v;
+  }
+  return req.ip;
 }
 
 export function bearerToken(req: Pick<FastifyRequest, "headers">): string | null {
@@ -46,5 +62,5 @@ export async function resolveAuth(token: string | null): Promise<AuthInfo | null
 }
 
 export async function createContext({ req }: { req: FastifyRequest }): Promise<Context> {
-  return { auth: await resolveAuth(bearerToken(req)) };
+  return { auth: await resolveAuth(bearerToken(req)), ip: clientIp(req) };
 }

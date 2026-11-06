@@ -178,3 +178,9 @@ export async function acceptInvite(tx: Tx, input: { token: string; password: str
   await audit(tx, { orgId: invite.orgId, actorId: user.id, entityType: "Invite", entityId: invite.id, action: "accept", after: { role: membership.role } });
   return startSession(tx, user, { role: membership.role, org: invite.org });
 }
+
+/** Email on a live invite (for rate limiting the existing-account password check), or null. */
+export async function inviteEmail(tx: Tx, token: string): Promise<string | null> {
+  const invite = await findByToken(tx, token);
+  return invite && inviteStatus(invite) === "PENDING" ? invite.email : null;
+}

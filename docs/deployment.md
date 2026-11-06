@@ -82,6 +82,5 @@ It prints a one-time owner invite link (valid 7 days). Open it, choose your pass
 
 ## Before real (non-demo) use
 
-- **Login throttling:** add per-account and per-IP rate limiting on `auth.login` (strong passwords mitigate this for now).
 - **Backups:** turn on Supabase point-in-time recovery (paid add-on) or schedule `pg_dump`.
 - **Mobile distribution:** move from local Release builds to EAS Build and TestFlight.
