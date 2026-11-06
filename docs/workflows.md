@@ -1,5 +1,23 @@
 # Workflows
 
+## 0. Company setup and joining (web)
+
+1. **New company (admin, once):** `pnpm --filter @timepeace/db create-org -- --name … --owner-email … --owner-name … --app-url …` creates the company with standard cost codes and two project templates, and prints a single-use **owner invite link**. Nobody types or sees a password.
+2. **Invite (Team page):**
+   - Owners can invite any role. Managers and HR can invite field workers only.
+   - For field workers, you pick W-2 or 1099. Owners and HR can also set a starting pay rate.
+   - The link is shown once, with **Copy**, **Text it** (opens the phone's messages with the link filled in) and **Email it**.
+3. **Accept (`/invite/<token>`):**
+   - A new person confirms their name and chooses a password (10+ characters).
+   - Someone who already has a Timepeace account enters that password instead.
+   - Either way they're signed in. Field workers are pointed to the mobile app.
+4. **Manage:**
+   - **New link** replaces a lost or expired link (the old one stops working). **Revoke** cancels an invite.
+   - **Deactivate** signs the person out everywhere and blocks sign-in. Their hours and history stay, and **Reactivate** restores access.
+   - Owners change roles. The company always keeps at least one active owner, and nobody can deactivate or change the role of themselves.
+
+Links expire after 7 days and work once. Only a SHA-256 hash of each link is stored. Invites, role changes, deactivations and pay-rate changes are written to the audit log.
+
 ## 1. Project setup (web, manager)
 
 1. **Projects → New project.** Enter name, client, site address, contract type and value (or markup for cost-plus/T&M), and start date. Optionally pick a **template** such as *Single-family new build* or *Kitchen remodel*.

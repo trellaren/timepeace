@@ -1,9 +1,8 @@
 import { loginInput } from "@timepeace/shared";
 import { TRPCError } from "@trpc/server";
 import bcrypt from "bcryptjs";
-import { env } from "../env";
-import { hashToken, newSessionToken } from "../lib/crypto";
 import { db } from "../lib/db";
+import { startSession } from "../services/session";
 import { authedProcedure, publicProcedure, router } from "../trpc";
 
 // Compared against when the email doesn't exist so response timing doesn't reveal accounts.
@@ -19,21 +18,7 @@ export const authRouter = router({
     const membership = user?.memberships[0];
     if (!user || !ok || !membership) throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password" });
 
-    const token = newSessionToken();
-    await db().session.create({
-      data: {
-        tokenHash: hashToken(token),
-        userId: user.id,
-        orgId: membership.orgId,
-        expiresAt: new Date(Date.now() + env.sessionTtlDays * 86_400_000),
-      },
-    });
-    return {
-      token,
-      user: { id: user.id, name: user.name, email: user.email },
-      role: membership.role,
-      org: { id: membership.org.id, name: membership.org.name, timezone: membership.org.timezone },
-    };
+    return startSession(db(), user, membership);
   }),
 
   me: authedProcedure.query(async ({ ctx }) => {

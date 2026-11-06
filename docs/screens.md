@@ -21,7 +21,9 @@
 | Tax → 1099-NEC | owner, accountant | ✅ | Per-vendor status (file / below threshold / exempt / goods), Box 1, card-excluded, W-9 and issues; edit W-9 details and TIN (encrypted) |
 | Tax → Mileage | owner, accountant | ✅ | Trip log with job and purpose; deduction at the year's IRS rate |
 | Tax → Estimated taxes | owner, accountant | ✅ | Projection, required annual amount (90% current vs prior-year safe harbor), quarterly status, payments, and the year's assumptions |
-| Settings | owner (pay rates also HR) | Phase 2 | Org, OT rules, pay periods, members and roles, pay rates, cost codes, templates, checklists |
+| Team | owner, manager, HR | ✅ | Invite (role, W-2/1099, starting pay), share link (copy, text, email), pending invites (new link, revoke), members with role changes (owner), pay rates (owner, HR), deactivate/reactivate |
+| Accept invite (`/invite/…`) | anyone with a link | ✅ | Shows company, inviter and role; new person sets name and password, existing account enters its password; signs in |
+| Settings | owner | Phase 2 | Org, OT rules, pay periods, cost codes, templates, checklists |
 
 ## Mobile (field)
 

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, ErrorText, Input } from "@/components/ui";
 import { saveSession } from "@/lib/session";
+import { API_URL } from "@/lib/trpc";
 
 export default function LoginPage() {
   const trpc = useTRPC();
@@ -37,7 +38,7 @@ export default function LoginPage() {
         <Button type="submit" className="w-full" disabled={login.isPending}>
           {login.isPending ? "Signing in…" : "Sign in"}
         </Button>
-        <p className="text-xs text-stone-400">Demo: manager@acme.test, hr@acme.test, owner@acme.test · password “timepeace”</p>
+        {API_URL.includes("localhost") && <p className="text-xs text-stone-400">Demo: manager@acme.test, hr@acme.test, owner@acme.test · password “timepeace”</p>}
       </form>
     </div>
   );

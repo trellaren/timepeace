@@ -36,4 +36,5 @@ export const can = {
   finance: (r?: Role) => r === "OWNER" || r === "MANAGER" || r === "ACCOUNTANT",
   payroll: (r?: Role) => r === "OWNER" || r === "HR",
   tax: (r?: Role) => r === "OWNER" || r === "ACCOUNTANT",
+  team: (r?: Role) => r === "OWNER" || r === "MANAGER" || r === "HR",
 };

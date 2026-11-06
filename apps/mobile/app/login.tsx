@@ -4,6 +4,7 @@ import { useState } from "react";
 import { KeyboardAvoidingView, Platform, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, Field, colors, s } from "@/components/ui";
+import { API_URL } from "@/lib/config";
 import { useSession } from "@/lib/session";
 
 export default function Login() {
@@ -31,7 +32,7 @@ export default function Login() {
             if (res) await signIn(res);
           }}
         />
-        <Text style={[s.muted, { textAlign: "center" }]}>Demo: jake@acme.test / timepeace</Text>
+        {!API_URL.startsWith("https://") && <Text style={[s.muted, { textAlign: "center" }]}>Demo: jake@acme.test / timepeace</Text>}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

@@ -16,7 +16,10 @@
 - Push notifications (new assignment, timesheet sent back, "still clocked in?" after N hours), via pg-boss
 - Worker acknowledgement when a manager edits their shift; state meal/rest-break compliance prompts (e.g. California)
 - Geofence check on clock-in (flag, don't block)
-- Settings UI (org, OT rules, members, pay rates, cost codes, templates)
+- ✅ Team: invites, roles, deactivation, pay rates; `create-org` for new companies
+- Settings UI (org, OT rules, cost codes, templates)
+- Mobile: sign out cleanly when a session is revoked (without dropping unsynced offline hours)
+- Optional invite email delivery (SMTP / provider) alongside copy/text links
 - S3/MinIO storage driver with presigned URLs; manager mobile views; daily logs with photos
 
 ## Phase 3: Finance depth
