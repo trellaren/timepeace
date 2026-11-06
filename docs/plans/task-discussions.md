@@ -1,6 +1,6 @@
 # Plan: discussions on tasks (notes and photos)
 
-Status: **approved, not built**. Written 2026-11-06; the owner's decisions are recorded in [Decisions](#decisions).
+Status: **approved; step 1 (database and API) built**. Written 2026-11-06; the owner's decisions are recorded in [Decisions](#decisions).
 
 ## Goal
 
@@ -144,17 +144,17 @@ All new procedures are in a `discussion` router. Access goes through `assertTask
 | `discussion.openQuestions()` | Managers: the org's open questions, oldest first, for the dashboard queue. |
 | `discussion.markRead({ taskId, at })` | Upserts `TaskCommentRead`. |
 | `discussion.unread()` | `{ taskId: { unread, openQuestions, newlyAnswered } }` for the caller's visible tasks (My Day markers, task table columns). |
-| `files.photoUrls({ fileIds })` | Batch of signed full-size URLs, after an access check. |
+| `discussion.photoUrls({ fileIds })` | Batch of signed full-size URLs, after an access check. `null` URLs with the local storage driver; clients then fetch `GET /files/:id` with their token. |
 
 **Mobile:** a new field op, `comment.create`, joins the `fieldOp` union in `packages/shared/src/schemas.ts`. It is applied in `services/sync.ts` by the same service function as `discussion.post`, so the web and phone paths can't drift. `ProcessedOp` plus the client UUID primary key make retries harmless.
 
-**Which tasks accept posts:** any task, including DONE and VERIFIED ones (useful for warranty and punch follow-up), until its project is marked **COMPLETE**. After that the thread is read-only. An offline post that arrives after completion is rejected with that reason, which the phone shows.
+**Which tasks accept posts:** any task, including DONE and VERIFIED ones (useful for warranty and punch follow-up), until its project is marked **COMPLETE** (or **CANCELLED**). After that the thread is read-only; removing messages and photos still works, so storage can be freed. An offline post that arrives after completion is rejected with that reason, which the phone shows.
 
 **Attachment rules** (enforced in the service):
 - The `fileId` and `thumbFileId` must belong to the caller's org, have been uploaded by the caller, be of kind `PHOTO` / `THUMBNAIL`, and not already be attached elsewhere.
 - At most 6 photos per message.
 
-**File access** changes in `GET /files/:id` and `files.photoUrls`:
+**File access** changes in `GET /files/:id` and `discussion.photoUrls`:
 - Today, a worker can fetch only their own uploads.
 - After this change, they can also fetch photos attached to a comment on a task they can access.
 - Managers keep org-wide access.
@@ -206,7 +206,8 @@ A later "archive photos for completed projects" export (ZIP, then delete) can fr
 ## Security and privacy
 
 - Message text is plain text, rendered as text. React escapes it. URLs are auto-linked with `rel="noopener noreferrer nofollow"`.
-- **Rate limit:** 60 messages per 10 minutes per user, stored in Postgres like the sign-in limits. Photo uploads are capped at 6 per message.
+- **Rate limit:** 60 messages per 10 minutes per user, counted from the messages themselves (no extra table). Photos are capped at 6 per message. From a phone, a message over the limit is rejected with its reason (shown on the phone with the text to copy) rather than holding up clock-outs queued behind it.
+- **Photo uploads** (`POST /files?kind=photo|thumbnail`) accept only JPEG, PNG and WebP, checked by their bytes, not the declared type. HR and accountants can't upload photos. Downloads send `X-Content-Type-Options: nosniff`.
 - Deactivating a worker revokes their sessions (already built). Their past messages stay, with their name.
 - Edits and removals are written to the AuditLog: who, when, and the before text. The photo itself is deleted (authors and managers can delete photos), but the log records that one was removed.
 - New tables are locked down from Supabase's public APIs (RLS on, anon/authenticated revoked).

@@ -126,6 +126,17 @@ enum MaterialRequestStatus {
   CANCELLED
 }
 
+enum CommentKind {
+  NOTE
+  QUESTION
+}
+
+enum FileKind {
+  RECEIPT
+  PHOTO
+  THUMBNAIL
+}
+
 enum ChecklistResult {
   PASS
   FAIL
@@ -164,65 +175,68 @@ enum PayrollExportFormat {
 // ───────────────────── Organization & people ─────────────────────
 
 model Organization {
-  id                String        @id @default(cuid())
-  name              String
-  timezone          String        @default("America/Denver")
-  entityType        EntityType    @default(LLC_SINGLE)
-  payPeriodType     PayPeriodType @default(WEEKLY)
+  id               String        @id @default(cuid())
+  name             String
+  timezone         String        @default("America/Denver")
+  entityType       EntityType    @default(LLC_SINGLE)
+  payPeriodType    PayPeriodType @default(WEEKLY)
   /// Start date of any real pay period (anchors BIWEEKLY periods).
-  payPeriodAnchor   DateTime      @db.Date
-  weekStartsOn      Int           @default(0)
+  payPeriodAnchor  DateTime      @db.Date
+  weekStartsOn     Int           @default(0)
   /// Overtime rules (see packages/shared/src/overtime.ts OvertimeRules).
-  overtimeRules     Json
+  overtimeRules    Json
   /// Default labor burden (payroll tax, workers' comp, benefits) in bps.
-  defaultBurdenBps  Int           @default(2500)
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  defaultBurdenBps Int           @default(2500)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
-  memberships       Membership[]
-  clients           Client[]
-  projects          Project[]
-  costCodes         CostCode[]
-  templates         ProjectTemplate[]
-  vendors           Vendor[]
-  payPeriods        PayPeriod[]
-  checklistTemplates ChecklistTemplate[]
-  taxYearSettings   TaxYearSettings[]
+  memberships          Membership[]
+  clients              Client[]
+  projects             Project[]
+  costCodes            CostCode[]
+  templates            ProjectTemplate[]
+  vendors              Vendor[]
+  payPeriods           PayPeriod[]
+  checklistTemplates   ChecklistTemplate[]
+  taxYearSettings      TaxYearSettings[]
   estimatedTaxPayments EstimatedTaxPayment[]
-  mileageLogs       MileageLog[]
-  auditLogs         AuditLog[]
-  files             FileObject[]
-  payrollExports    PayrollExport[]
-  invites           Invite[]
+  mileageLogs          MileageLog[]
+  auditLogs            AuditLog[]
+  files                FileObject[]
+  taskComments         TaskComment[]
+  payrollExports       PayrollExport[]
+  invites              Invite[]
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
+  id           String   @id @default(cuid())
+  email        String   @unique
   name         String
   phone        String?
   passwordHash String
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  memberships     Membership[]
-  sessions        Session[]
-  workerProfiles  WorkerProfile[]
-  assignments     TaskAssignment[]
-  timeEntries     TimeEntry[]
-  shifts          Shift[]
-  timesheets      Timesheet[]       @relation("TimesheetOwner")
-  reviewedSheets  Timesheet[]       @relation("TimesheetReviewer")
-  expenses        Expense[]         @relation("ExpenseSubmitter")
-  reviewedExpenses Expense[]        @relation("ExpenseReviewer")
+  memberships      Membership[]
+  sessions         Session[]
+  workerProfiles   WorkerProfile[]
+  assignments      TaskAssignment[]
+  timeEntries      TimeEntry[]
+  shifts           Shift[]
+  timesheets       Timesheet[]       @relation("TimesheetOwner")
+  reviewedSheets   Timesheet[]       @relation("TimesheetReviewer")
+  expenses         Expense[]         @relation("ExpenseSubmitter")
+  reviewedExpenses Expense[]         @relation("ExpenseReviewer")
   materialRequests MaterialRequest[]
-  walkthroughs    Walkthrough[]
-  dailyLogs       DailyLog[]
-  mileageLogs     MileageLog[]
-  auditLogs       AuditLog[]
-  processedOps    ProcessedOp[]
-  invitesSent     Invite[]          @relation("InviteSender")
-  invitesAccepted Invite[]          @relation("InviteAcceptor")
+  walkthroughs     Walkthrough[]
+  dailyLogs        DailyLog[]
+  mileageLogs      MileageLog[]
+  auditLogs        AuditLog[]
+  processedOps     ProcessedOp[]
+  invitesSent      Invite[]          @relation("InviteSender")
+  invitesAccepted  Invite[]          @relation("InviteAcceptor")
+  taskComments     TaskComment[]
+  taskCommentReads TaskCommentRead[]
 }
 
 model Membership {
@@ -284,14 +298,14 @@ model PayRate {
 // ───────────────────── Projects, tasks, schedule ─────────────────────
 
 model Client {
-  id        String       @id @default(cuid())
-  orgId     String
-  name      String
-  email     String?
-  phone     String?
-  address   String?
-  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  projects  Project[]
+  id       String       @id @default(cuid())
+  orgId    String
+  name     String
+  email    String?
+  phone    String?
+  address  String?
+  org      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  projects Project[]
 
   @@index([orgId])
 }
@@ -318,29 +332,29 @@ model Project {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  org               Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  client            Client?       @relation(fields: [clientId], references: [id])
-  phases            Phase[]
-  tasks             Task[]
-  budgetLines       BudgetLine[]
-  changeOrders      ChangeOrder[]
-  invoices          Invoice[]
-  timeEntries       TimeEntry[]
-  shifts            Shift[]
-  expenses          Expense[]
-  walkthroughs      Walkthrough[]
-  dailyLogs         DailyLog[]
-  mileageLogs       MileageLog[]
+  org          Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  client       Client?       @relation(fields: [clientId], references: [id])
+  phases       Phase[]
+  tasks        Task[]
+  budgetLines  BudgetLine[]
+  changeOrders ChangeOrder[]
+  invoices     Invoice[]
+  timeEntries  TimeEntry[]
+  shifts       Shift[]
+  expenses     Expense[]
+  walkthroughs Walkthrough[]
+  dailyLogs    DailyLog[]
+  mileageLogs  MileageLog[]
 
   @@index([orgId, status])
 }
 
 model Phase {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   projectId String
   name      String
-  sortOrder Int      @default(0)
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sortOrder Int     @default(0)
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   tasks     Task[]
 
   @@index([projectId])
@@ -366,17 +380,19 @@ model Task {
   createdAt              DateTime   @default(now())
   updatedAt              DateTime   @updatedAt
 
-  project          Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  phase            Phase?            @relation(fields: [phaseId], references: [id], onDelete: SetNull)
-  costCode         CostCode?         @relation(fields: [costCodeId], references: [id])
+  project          Project                @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  phase            Phase?                 @relation(fields: [phaseId], references: [id], onDelete: SetNull)
+  costCode         CostCode?              @relation(fields: [costCodeId], references: [id])
   walkthroughItem  WalkthroughItemResult? @relation(fields: [walkthroughItemId], references: [id])
   assignments      TaskAssignment[]
   timeEntries      TimeEntry[]
   expenses         Expense[]
   materialRequests MaterialRequest[]
-  dependsOn        TaskDependency[]  @relation("DependentTask")
-  blocks           TaskDependency[]  @relation("PrerequisiteTask")
+  dependsOn        TaskDependency[]       @relation("DependentTask")
+  blocks           TaskDependency[]       @relation("PrerequisiteTask")
   statusEvents     TaskStatusEvent[]
+  comments         TaskComment[]
+  commentReads     TaskCommentRead[]
 
   @@index([projectId, status])
 }
@@ -392,14 +408,14 @@ model TaskDependency {
 
 /// History of status changes; feeds "time waiting on materials" analytics.
 model TaskStatusEvent {
-  id        String     @id @default(cuid())
-  taskId    String
-  userId    String?
-  from      TaskStatus
-  to        TaskStatus
-  note      String?
-  at        DateTime
-  task      Task       @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  id     String     @id @default(cuid())
+  taskId String
+  userId String?
+  from   TaskStatus
+  to     TaskStatus
+  note   String?
+  at     DateTime
+  task   Task       @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([taskId, at])
 }
@@ -456,18 +472,18 @@ model BudgetLine {
 }
 
 model ChangeOrder {
-  id           String            @id @default(cuid())
-  projectId    String
-  number       Int
-  title        String
-  description  String?
-  amountCents  Int
+  id              String            @id @default(cuid())
+  projectId       String
+  number          Int
+  title           String
+  description     String?
+  amountCents     Int
   /// Added cost budget; split by cost code later if needed.
-  costImpactCents Int            @default(0)
-  status       ChangeOrderStatus @default(DRAFT)
-  approvedAt   DateTime?
-  createdAt    DateTime          @default(now())
-  project      Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  costImpactCents Int               @default(0)
+  status          ChangeOrderStatus @default(DRAFT)
+  approvedAt      DateTime?
+  createdAt       DateTime          @default(now())
+  project         Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, number])
 }
@@ -517,9 +533,9 @@ model Shift {
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
-  user        User            @relation(fields: [userId], references: [id])
-  project     Project?        @relation(fields: [projectId], references: [id])
-  timesheet   Timesheet?      @relation(fields: [timesheetId], references: [id])
+  user        User         @relation(fields: [userId], references: [id])
+  project     Project?     @relation(fields: [projectId], references: [id])
+  timesheet   Timesheet?   @relation(fields: [timesheetId], references: [id])
   breaks      ShiftBreak[]
   timeEntries TimeEntry[]
 
@@ -571,7 +587,7 @@ model TimeEntry {
 }
 
 model Expense {
-  id              String        @id @default(uuid())
+  id              String         @id @default(uuid())
   orgId           String
   userId          String
   /// null = company overhead (insurance, office, phones…), not charged to a job.
@@ -581,15 +597,15 @@ model Expense {
   vendorId        String?
   vendorName      String
   amountCents     Int
-  salesTaxCents   Int           @default(0)
-  category        CostCategory  @default(MATERIAL)
+  salesTaxCents   Int            @default(0)
+  category        CostCategory   @default(MATERIAL)
   /// TAX_CATEGORIES id from packages/shared/src/tax.ts
-  taxCategory     String        @default("job_materials")
+  taxCategory     String         @default("job_materials")
   paidBy          PaidBy
   /// Recorded for company payments to vendors (drives 1099-NEC). null = not recorded.
   paymentMethod   PaymentMethod?
-  status          ExpenseStatus @default(SUBMITTED)
-  spentOn         DateTime      @db.Date
+  status          ExpenseStatus  @default(SUBMITTED)
+  spentOn         DateTime       @db.Date
   note            String?
   receiptFileId   String?
   reviewedById    String?
@@ -597,8 +613,8 @@ model Expense {
   reviewNote      String?
   reimbursedAt    DateTime?
   payrollExportId String?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 
   user          User           @relation("ExpenseSubmitter", fields: [userId], references: [id])
   reviewedBy    User?          @relation("ExpenseReviewer", fields: [reviewedById], references: [id])
@@ -615,17 +631,17 @@ model Expense {
 }
 
 model MaterialRequest {
-  id          String                @id @default(uuid())
-  taskId      String
+  id            String                @id @default(uuid())
+  taskId        String
   requestedById String
-  description String
-  quantity    String?
-  neededBy    DateTime?             @db.Date
-  status      MaterialRequestStatus @default(REQUESTED)
-  createdAt   DateTime              @default(now())
-  updatedAt   DateTime              @updatedAt
-  task        Task                  @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  requestedBy User                  @relation(fields: [requestedById], references: [id])
+  description   String
+  quantity      String?
+  neededBy      DateTime?             @db.Date
+  status        MaterialRequestStatus @default(REQUESTED)
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  task          Task                  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  requestedBy   User                  @relation(fields: [requestedById], references: [id])
 
   @@index([status])
 }
@@ -664,51 +680,118 @@ model DailyLog {
 }
 
 model FileObject {
-  id          String       @id @default(cuid())
-  orgId       String
-  uploadedById String
-  storageKey  String       @unique
-  contentType String
-  sizeBytes   Int
-  createdAt   DateTime     @default(now())
-  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  expenses    Expense[]
+  id              String             @id @default(cuid())
+  orgId           String
+  uploadedById    String
+  storageKey      String             @unique
+  contentType     String
+  sizeBytes       Int
+  kind            FileKind           @default(RECEIPT)
+  /// Set when a photo is removed; the stored object is purged and it no longer counts against storage.
+  deletedAt       DateTime?
+  createdAt       DateTime           @default(now())
+  org             Organization       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  expenses        Expense[]
+  attachment      CommentAttachment? @relation("AttachmentFile")
+  attachmentThumb CommentAttachment? @relation("AttachmentThumb")
+
+  @@index([orgId, deletedAt])
+}
+
+// ───────────────────── Task discussions ─────────────────────
+
+/// A note or question on a task, from the crew or the office. See docs/plans/task-discussions.md.
+model TaskComment {
+  /// Client-generated UUID, so a post from an offline phone is idempotent.
+  id           String              @id
+  orgId        String
+  taskId       String
+  authorId     String
+  /// Plain text. Blanked when removed (the text is kept in the AuditLog).
+  body         String              @default("")
+  kind         CommentKind         @default(NOTE)
+  /// Questions: set by the first manager/owner note after it, or "Mark answered"; cleared on reopen.
+  answeredAt   DateTime?
+  answeredById String?
+  /// When it was written (device time for offline posts, never in the future).
+  createdAt    DateTime
+  /// When the server got it. Unread markers and the edit window use this.
+  receivedAt   DateTime            @default(now())
+  editedAt     DateTime?
+  deletedAt    DateTime?
+  deletedById  String?
+  org          Organization        @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  task         Task                @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author       User                @relation(fields: [authorId], references: [id])
+  attachments  CommentAttachment[]
+
+  @@index([taskId, createdAt])
+  @@index([authorId, receivedAt])
+  @@index([orgId, kind, answeredAt])
+}
+
+model CommentAttachment {
+  /// Client-generated UUID.
+  id          String      @id
+  commentId   String
+  fileId      String      @unique
+  thumbFileId String      @unique
+  width       Int
+  height      Int
+  position    Int
+  comment     TaskComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  file        FileObject  @relation("AttachmentFile", fields: [fileId], references: [id])
+  thumb       FileObject  @relation("AttachmentThumb", fields: [thumbFileId], references: [id])
+
+  @@index([commentId])
+}
+
+/// The last time each person read a task's discussion. Drives unread markers.
+model TaskCommentRead {
+  userId     String
+  taskId     String
+  lastReadAt DateTime
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@id([userId, taskId])
+  @@index([taskId])
 }
 
 // ───────────────────── Checklists / walkthroughs ─────────────────────
 
 model ChecklistTemplate {
-  id     String                  @id @default(cuid())
-  orgId  String
-  name   String
-  org    Organization            @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  items  ChecklistTemplateItem[]
+  id           String                  @id @default(cuid())
+  orgId        String
+  name         String
+  org          Organization            @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  items        ChecklistTemplateItem[]
   walkthroughs Walkthrough[]
 }
 
 model ChecklistTemplateItem {
-  id         String            @id @default(cuid())
-  templateId String
-  section    String?
-  text       String
-  sortOrder  Int               @default(0)
-  requirePhotoOnFail Boolean   @default(true)
-  template   ChecklistTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  id                 String            @id @default(cuid())
+  templateId         String
+  section            String?
+  text               String
+  sortOrder          Int               @default(0)
+  requirePhotoOnFail Boolean           @default(true)
+  template           ChecklistTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
 }
 
 model Walkthrough {
-  id            String                  @id @default(uuid())
-  projectId     String
-  templateId    String
-  performedById String
-  startedAt     DateTime
-  completedAt   DateTime?
+  id              String                  @id @default(uuid())
+  projectId       String
+  templateId      String
+  performedById   String
+  startedAt       DateTime
+  completedAt     DateTime?
   signatureFileId String?
-  notes         String?
-  project       Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  template      ChecklistTemplate       @relation(fields: [templateId], references: [id])
-  performedBy   User                    @relation(fields: [performedById], references: [id])
-  results       WalkthroughItemResult[]
+  notes           String?
+  project         Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  template        ChecklistTemplate       @relation(fields: [templateId], references: [id])
+  performedBy     User                    @relation(fields: [performedById], references: [id])
+  results         WalkthroughItemResult[]
 }
 
 model WalkthroughItemResult {
@@ -727,11 +810,11 @@ model WalkthroughItemResult {
 // ───────────────────── Payroll ─────────────────────
 
 model PayPeriod {
-  id         String       @id @default(cuid())
+  id         String          @id @default(cuid())
   orgId      String
-  startDate  DateTime     @db.Date
-  endDate    DateTime     @db.Date
-  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  startDate  DateTime        @db.Date
+  endDate    DateTime        @db.Date
+  org        Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
   timesheets Timesheet[]
   exports    PayrollExport[]
 
@@ -789,24 +872,24 @@ model PayrollExport {
 // ───────────────────── Vendors & tax ─────────────────────
 
 model Vendor {
-  id               String       @id @default(cuid())
-  orgId            String
-  name             String
-  isSubcontractor  Boolean      @default(false)
-  is1099Eligible   Boolean      @default(false)
-  w9OnFile         Boolean      @default(false)
+  id                String          @id @default(cuid())
+  orgId             String
+  name              String
+  isSubcontractor   Boolean         @default(false)
+  is1099Eligible    Boolean         @default(false)
+  w9OnFile          Boolean         @default(false)
   /// W-9 line 3. Corporations are generally exempt from 1099-NEC (attorneys are not).
   taxClassification VendorTaxClass?
-  isAttorney       Boolean      @default(false)
-  w9ReceivedOn     DateTime?    @db.Date
+  isAttorney        Boolean         @default(false)
+  w9ReceivedOn      DateTime?       @db.Date
   /// AES-256-GCM ciphertext (see apps/api/src/lib/crypto.ts). Only last4 is ever shown.
-  tinEncrypted     String?
-  tinLast4         String?
-  email            String?
-  address          String?
-  org              Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  expenses         Expense[]
-  workerProfiles   WorkerProfile[]
+  tinEncrypted      String?
+  tinLast4          String?
+  email             String?
+  address           String?
+  org               Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  expenses          Expense[]
+  workerProfiles    WorkerProfile[]
 
   @@index([orgId])
 }
@@ -877,27 +960,27 @@ model ProcessedOp {
 /// A single-use link that adds someone to an org. Only the SHA-256 of the token is stored; the
 /// raw link is shown to the inviter once (creation or regeneration).
 model Invite {
-  id               String                @id @default(cuid())
-  orgId            String
-  email            String
-  name             String
-  phone            String?
-  role             Role
+  id              String                @id @default(cuid())
+  orgId           String
+  email           String
+  name            String
+  phone           String?
+  role            Role
   /// For WORKER invites.
-  classification   WorkerClassification?
+  classification  WorkerClassification?
   /// Starting pay rate; only OWNER/HR may set it.
-  hourlyRateCents  Int?
-  tokenHash        String                @unique
-  invitedById      String
-  expiresAt        DateTime
-  acceptedAt       DateTime?
-  acceptedUserId   String?
-  revokedAt        DateTime?
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
-  org              Organization          @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  invitedBy        User                  @relation("InviteSender", fields: [invitedById], references: [id])
-  acceptedUser     User?                 @relation("InviteAcceptor", fields: [acceptedUserId], references: [id])
+  hourlyRateCents Int?
+  tokenHash       String                @unique
+  invitedById     String
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  acceptedUserId  String?
+  revokedAt       DateTime?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  org             Organization          @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  invitedBy       User                  @relation("InviteSender", fields: [invitedById], references: [id])
+  acceptedUser    User?                 @relation("InviteAcceptor", fields: [acceptedUserId], references: [id])
 
   @@index([orgId, email])
 }

@@ -51,6 +51,9 @@ const pick = <T,>(xs: readonly T[]) => xs[Math.floor(rand() * xs.length)]!;
 async function reset() {
   // Children before parents.
   await prisma.$transaction([
+    prisma.taskCommentRead.deleteMany(),
+    prisma.commentAttachment.deleteMany(),
+    prisma.taskComment.deleteMany(),
     prisma.processedOp.deleteMany(),
     prisma.invite.deleteMany(),
     prisma.auditLog.deleteMany(),

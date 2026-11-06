@@ -9,6 +9,7 @@ import { env } from "./env";
 import { db } from "./lib/db";
 import { storage } from "./lib/storage";
 import { appRouter, type AppRouter } from "./router";
+import { canDiscuss, readableFiles } from "./services/discussion";
 import { buildCpaPackage } from "./services/cpaPackage";
 import { payrollCsv, payrollPdf, payrollRows } from "./services/payroll";
 import { PAYROLL_ROLES } from "./trpc";
@@ -20,6 +21,18 @@ const ALLOWED_UPLOAD_TYPES: Record<string, string> = {
   "image/webp": "webp",
   "application/pdf": "pdf",
 };
+
+/** Discussion photos and thumbnails: resized on the device, so only these web formats. */
+const PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const UPLOAD_KINDS = { receipt: "RECEIPT", photo: "PHOTO", thumbnail: "THUMBNAIL" } as const;
+
+/** The image type the bytes actually are, so a file can't pose as a photo. */
+export function sniffImage(b: Buffer): string | null {
+  if (b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "image/jpeg";
+  if (b.length >= 8 && b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return "image/png";
+  if (b.length >= 12 && b.toString("latin1", 0, 4) === "RIFF" && b.toString("latin1", 8, 12) === "WEBP") return "image/webp";
+  return null;
+}
 
 export async function buildApp() {
   const app = Fastify({ logger: process.env.NODE_ENV !== "test", bodyLimit: 2 * 1024 * 1024 });
@@ -50,13 +63,20 @@ export async function buildApp() {
     return auth;
   };
 
-  /** Receipt / photo upload. Returns a FileObject id to reference from expenses. */
-  app.post("/files", async (req, reply) => {
+  /**
+   * Upload a receipt (default) or a discussion photo/thumbnail (`?kind=photo|thumbnail`).
+   * Returns a FileObject id for an expense or a message to reference.
+   */
+  app.post<{ Querystring: { kind?: string } }>("/files", async (req, reply) => {
     const auth = await requireAuth(req);
+    const kindParam = req.query.kind ?? "receipt";
+    if (!(kindParam in UPLOAD_KINDS)) return reply.code(400).send({ error: "Unknown kind" });
+    const kind = UPLOAD_KINDS[kindParam as keyof typeof UPLOAD_KINDS];
+    if (kind !== "RECEIPT" && !canDiscuss(auth)) return reply.code(403).send({ error: "Forbidden" });
     const file = await req.file();
     if (!file) return reply.code(400).send({ error: "No file" });
     const ext = ALLOWED_UPLOAD_TYPES[file.mimetype];
-    if (!ext) return reply.code(415).send({ error: `Unsupported type ${file.mimetype}` });
+    if (!ext || (kind !== "RECEIPT" && !PHOTO_TYPES.has(file.mimetype))) return reply.code(415).send({ error: `Unsupported type ${file.mimetype}` });
     let data: Buffer;
     try {
       data = await file.toBuffer();
@@ -64,10 +84,11 @@ export async function buildApp() {
       if ((err as { code?: string }).code === "FST_REQ_FILE_TOO_LARGE") return reply.code(413).send({ error: `File is larger than ${Math.floor(env.maxUploadBytes / 1024 / 1024)} MB` });
       throw err;
     }
+    if (kind !== "RECEIPT" && sniffImage(data) !== file.mimetype) return reply.code(415).send({ error: "That file isn't a JPEG, PNG or WebP image" });
     const key = `${auth.orgId}/${new Date().toISOString().slice(0, 7)}/${randomUUID()}.${ext}`;
     await storage.put(key, data, file.mimetype);
     const obj = await db().fileObject.create({
-      data: { orgId: auth.orgId, uploadedById: auth.userId, storageKey: key, contentType: file.mimetype, sizeBytes: data.length },
+      data: { orgId: auth.orgId, uploadedById: auth.userId, storageKey: key, contentType: file.mimetype, sizeBytes: data.length, kind },
     });
     return { id: obj.id };
   });
@@ -75,10 +96,13 @@ export async function buildApp() {
   app.get<{ Params: { id: string } }>("/files/:id", async (req, reply) => {
     const auth = await requireAuth(req);
     const f = await db().fileObject.findFirst({ where: { id: req.params.id, orgId: auth.orgId } });
-    if (!f) return reply.code(404).send({ error: "Not found" });
-    // Workers can only fetch their own uploads.
-    if (auth.role === "WORKER" && f.uploadedById !== auth.userId) return reply.code(404).send({ error: "Not found" });
-    return reply.type(f.contentType).header("Cache-Control", "private, max-age=3600").send(await storage.read(f.storageKey));
+    // Receipts: workers only their own. Photos: anyone who can see the message's task. Removed: nobody.
+    if (!f || !(await readableFiles(auth, [f])).has(f.id)) return reply.code(404).send({ error: "Not found" });
+    return reply
+      .type(f.contentType)
+      .header("Cache-Control", "private, max-age=3600")
+      .header("X-Content-Type-Options", "nosniff")
+      .send(await storage.read(f.storageKey));
   });
 
   app.get<{ Params: { id: string } }>("/payroll-exports/:id/download", async (req, reply) => {

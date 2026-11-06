@@ -155,6 +155,8 @@ export function describeOp(op: OutboxOp): string {
       return "Stopped a task";
     case "task.status":
       return `Marked a task ${STATUS_WORDS[op.payload.status] ?? op.payload.status}${op.payload.note ? ` (${op.payload.note})` : ""}`;
+    case "comment.create":
+      return `${op.payload.kind === "QUESTION" ? "Asked a question" : "Posted a note"} on a task${op.payload.body ? `: "${op.payload.body.slice(0, 80)}"` : ""}${op.payload.attachments.length ? ` (${op.payload.attachments.length} photo${op.payload.attachments.length === 1 ? "" : "s"})` : ""}`;
     case "material.request":
       return `Requested materials: ${op.payload.description}${op.payload.quantity ? ` × ${op.payload.quantity}` : ""}`;
     case "expense.create":

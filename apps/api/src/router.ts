@@ -1,5 +1,6 @@
 import type { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
 import { approvalsRouter } from "./routers/approvals";
+import { discussionRouter } from "./routers/discussion";
 import { authRouter } from "./routers/auth";
 import { fieldRouter } from "./routers/field";
 import { financeRouter } from "./routers/finance";
@@ -24,6 +25,7 @@ export const appRouter = router({
   tax: taxRouter,
   team: teamRouter,
   invites: invitesRouter,
+  discussion: discussionRouter,
 });
 
 export type AppRouter = typeof appRouter;
