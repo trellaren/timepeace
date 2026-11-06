@@ -3,22 +3,37 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { errorMessage, useTRPC, type RouterOutputs } from "@timepeace/api-client";
 import { COST_CATEGORIES, TASK_STATUSES, dollarsToCents, formatCents, toLocalDate, type CostCategory, type TaskStatus } from "@timepeace/shared";
-import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useState } from "react";
 import { useSession } from "@/components/AppShell";
+import { TaskPanel } from "@/components/TaskPanel";
 import { AlertBadge, BudgetBar, Button, Card, ErrorText, Input, Loading, Money, PageHeader, Select, StatusBadge, cx } from "@/components/ui";
 import { can } from "@/lib/session";
 
 type Project = RouterOutputs["projects"]["get"];
 
-export default function ProjectPage() {
+export default function ProjectPageRoute() {
+  // useSearchParams (the open task) needs a Suspense boundary.
+  return (
+    <Suspense fallback={<Loading />}>
+      <ProjectPage />
+    </Suspense>
+  );
+}
+
+function ProjectPage() {
   const { id } = useParams<{ id: string }>();
   const trpc = useTRPC();
   const session = useSession();
+  const router = useRouter();
+  const openTaskId = useSearchParams().get("task");
   const { data: project, isLoading } = useQuery(trpc.projects.get.queryOptions({ id }));
   const [tab, setTab] = useState<"tasks" | "budget">("tasks");
+  const openTask = useCallback((taskId: string | null) => router.replace(taskId ? `/projects/${id}?task=${encodeURIComponent(taskId)}` : `/projects/${id}`, { scroll: false }), [router, id]);
+  const closeTask = useCallback(() => openTask(null), [openTask]);
   if (isLoading || !project) return <Loading />;
   const showFinance = can.finance(session?.role);
+  const openTaskRow = openTaskId ? project.tasks.find((t) => t.id === openTaskId) : undefined;
 
   return (
     <>
@@ -37,14 +52,22 @@ export default function ProjectPage() {
           </button>
         ))}
       </div>
-      {tab === "tasks" ? <TasksTab project={project} canEdit={can.manage(session?.role)} /> : <BudgetTab project={project} canEdit={can.manage(session?.role)} />}
+      {tab === "tasks" ? (
+        <TasksTab project={project} canEdit={can.manage(session?.role)} canDiscuss={can.discuss(session?.role)} onOpenTask={openTask} />
+      ) : (
+        <BudgetTab project={project} canEdit={can.manage(session?.role)} />
+      )}
+      {openTaskRow && (
+        <TaskPanel task={openTaskRow} phaseName={project.phases.find((p) => p.id === openTaskRow.phaseId)?.name ?? null} showDiscussion={can.discuss(session?.role)} onClose={closeTask} />
+      )}
     </>
   );
 }
 
-function TasksTab({ project, canEdit }: { project: Project; canEdit: boolean }) {
+function TasksTab({ project, canEdit, canDiscuss, onOpenTask }: { project: Project; canEdit: boolean; canDiscuss: boolean; onOpenTask: (taskId: string) => void }) {
   const trpc = useTRPC();
   const qc = useQueryClient();
+  const discussion = useQuery({ ...trpc.discussion.unread.queryOptions(), enabled: canDiscuss, refetchInterval: 60_000 });
   const workers = useQuery({ ...trpc.org.workers.queryOptions(), enabled: canEdit });
   const costCodes = useQuery(trpc.org.costCodes.queryOptions());
   const refresh = () => qc.invalidateQueries({ queryKey: trpc.projects.get.queryKey({ id: project.id }) });
@@ -86,7 +109,12 @@ function TasksTab({ project, canEdit }: { project: Project; canEdit: boolean }) 
               {g.tasks.map((t) => (
                 <tr key={t.id} className="border-t border-line-soft align-top">
                   <td className="py-2 pr-2">
-                    <div className="font-medium text-ink">{t.title}</div>
+                    <div className="flex flex-wrap items-baseline gap-x-2">
+                      <button className="text-left font-medium text-ink hover:text-accent-ink hover:underline" onClick={() => onOpenTask(t.id)}>
+                        {t.title}
+                      </button>
+                      <DiscussionBadges counts={discussion.data?.[t.id]} onOpen={() => onOpenTask(t.id)} />
+                    </div>
                     {t.statusNote && <div className="text-xs text-warning-ink">{t.statusNote}</div>}
                     {t.materialRequests.map((m) => (
                       <div key={m.id} className="text-xs text-muted">
@@ -162,6 +190,18 @@ function TasksTab({ project, canEdit }: { project: Project; canEdit: boolean }) 
         </form>
       )}
     </div>
+  );
+}
+
+/** Unread messages and open questions on a task. Text, not color alone. */
+function DiscussionBadges({ counts, onOpen }: { counts?: { unread: number; openQuestions: number }; onOpen: () => void }) {
+  if (!counts || (!counts.unread && !counts.openQuestions)) return null;
+  const label = [counts.openQuestions && `${counts.openQuestions} open question${counts.openQuestions === 1 ? "" : "s"}`, counts.unread && `${counts.unread} unread`].filter(Boolean).join(", ");
+  return (
+    <button onClick={onOpen} aria-label={label} title={label} className="inline-flex gap-1 text-xs">
+      {counts.openQuestions > 0 && <span className="rounded bg-warning-soft px-1.5 font-medium text-warning-ink">? {counts.openQuestions}</span>}
+      {counts.unread > 0 && <span className="rounded bg-accent-soft px-1.5 font-medium text-accent-ink">💬 {counts.unread}</span>}
+    </button>
   );
 }
 

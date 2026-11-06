@@ -1,6 +1,6 @@
 # Plan: discussions on tasks (notes and photos)
 
-Status: **approved; step 1 (database and API) built**. Written 2026-11-06; the owner's decisions are recorded in [Decisions](#decisions).
+Status: **approved; steps 1 (database and API) and 2 (web) built**. Written 2026-11-06; the owner's decisions are recorded in [Decisions](#decisions).
 
 ## Goal
 

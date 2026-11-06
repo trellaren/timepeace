@@ -37,4 +37,6 @@ export const can = {
   payroll: (r?: Role) => r === "OWNER" || r === "HR",
   tax: (r?: Role) => r === "OWNER" || r === "ACCOUNTANT",
   team: (r?: Role) => r === "OWNER" || r === "MANAGER" || r === "HR",
+  /** Task discussions: the crew and the office, not HR or accountants. */
+  discuss: (r?: Role) => r === "OWNER" || r === "MANAGER" || r === "WORKER",
 };
