@@ -21,6 +21,8 @@
 - ✅ Mobile: signs out cleanly when a session is revoked; unsynced hours are kept per worker and can be shared with a manager
 - Optional invite email delivery (SMTP / provider) alongside copy/text links
 - S3/MinIO storage driver with presigned URLs; manager mobile views; daily logs with photos
+- Task discussions: notes and photos on every task, offline from the phone, within the free tier. Plan: [plans/task-discussions.md](plans/task-discussions.md)
+- ✅ Themes: Light, Dark, Sunlight (high contrast for outdoor use) and System, on web and mobile
 
 ## Phase 3: Finance depth
 

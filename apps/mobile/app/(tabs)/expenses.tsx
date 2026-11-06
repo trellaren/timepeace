@@ -4,9 +4,10 @@ import { formatCents } from "@timepeace/shared";
 import { router } from "expo-router";
 import { RefreshControl, ScrollView, Text, View } from "react-native";
 import { SyncBanner } from "@/components/SyncBanner";
-import { Button, Card, StatusPill, s } from "@/components/ui";
+import { Button, Card, StatusPill, useStyles } from "@/components/ui";
 
 export default function Expenses() {
+  const s = useStyles();
   const trpc = useTRPC();
   const q = useQuery(trpc.field.myExpenses.queryOptions());
   return (

@@ -78,9 +78,9 @@ function TaxCenter() {
         }
       />
       <ErrorText error={err} />
-      <div className="mb-4 flex gap-1 border-b border-stone-200">
+      <div className="mb-4 flex gap-1 border-b border-line">
         {TABS.map((t) => (
-          <button key={t.id} onClick={() => go(t.id)} className={cx("-mb-px border-b-2 px-4 py-2 text-sm", tab === t.id ? "border-brand-600 font-medium text-brand-700" : "border-transparent text-stone-500 hover:text-stone-800")}>
+          <button key={t.id} onClick={() => go(t.id)} className={cx("-mb-px border-b-2 px-4 py-2 text-sm", tab === t.id ? "border-accent font-medium text-accent-ink" : "border-transparent text-muted hover:text-ink")}>
             {t.label}
           </button>
         ))}
@@ -112,12 +112,12 @@ function Overview({ year, onOpen }: { year: number; onOpen: (t: Tab) => void }) 
           { label: "Other deductions", v: s.deductionsCents },
           { label: "Net profit (estimate)", v: s.netProfitCents },
         ].map((t) => (
-          <div key={t.label} className="rounded-lg border border-stone-200 bg-white p-4">
-            <div className="text-xs text-stone-500">{t.label}</div>
-            <div className={cx("mt-1 text-xl font-semibold", t.v < 0 && "text-red-700")}>
+          <div key={t.label} className="rounded-lg border border-line bg-surface p-4">
+            <div className="text-xs text-muted">{t.label}</div>
+            <div className={cx("mt-1 text-xl font-semibold", t.v < 0 && "text-critical-ink")}>
               <Money cents={t.v} />
             </div>
-            {t.sub && <div className="text-xs text-stone-400">{t.sub}</div>}
+            {t.sub && <div className="text-xs text-faint">{t.sub}</div>}
           </div>
         ))}
       </div>
@@ -127,7 +127,7 @@ function Overview({ year, onOpen }: { year: number; onOpen: (t: Tab) => void }) 
           <ul className="space-y-1.5 text-sm">
             {s.flags.map((f, i) => (
               <li key={i} className="flex gap-2">
-                <span aria-hidden className={f.level === "warn" ? "text-amber-600" : "text-brand-600"}>
+                <span aria-hidden className={f.level === "warn" ? "text-warning-ink" : "text-accent-ink"}>
                   {f.level === "warn" ? "▲" : "ℹ︎"}
                 </span>
                 <span>{f.message}</span>
@@ -152,7 +152,7 @@ function Overview({ year, onOpen }: { year: number; onOpen: (t: Tab) => void }) 
             <Row k="W-2 wages (gross estimate)" v={<Money cents={s.payroll.w2WagesCents} />} />
             <Row k="1099 contractors via payroll" v={<Money cents={s.payroll.contractorPayCents} />} />
           </dl>
-          <p className="mt-2 text-xs text-stone-400">Employer payroll taxes and benefits come from your payroll provider&apos;s reports.</p>
+          <p className="mt-2 text-xs text-faint">Employer payroll taxes and benefits come from your payroll provider&apos;s reports.</p>
         </Card>
         <Card title="Vehicle (standard mileage)" actions={<Button variant="ghost" onClick={() => onOpen("mileage")}>Log →</Button>}>
           <dl className="space-y-1 text-sm">
@@ -163,22 +163,22 @@ function Overview({ year, onOpen }: { year: number; onOpen: (t: Tab) => void }) 
         </Card>
         <Card title="Capital purchases & sales tax">
           {s.capitalPurchases.length === 0 ? (
-            <p className="text-sm text-stone-500">No equipment purchases this year.</p>
+            <p className="text-sm text-muted">No equipment purchases this year.</p>
           ) : (
             <ul className="space-y-1 text-sm">
               {s.capitalPurchases.map((c) => (
                 <li key={c.id} className="flex justify-between gap-2">
                   <span>
                     {c.spentOn} · {c.vendorName}
-                    {c.note && <span className="text-stone-500"> · {c.note}</span>}
+                    {c.note && <span className="text-muted"> · {c.note}</span>}
                   </span>
                   <Money cents={c.amountCents} />
                 </li>
               ))}
             </ul>
           )}
-          <p className="mt-2 text-xs text-stone-400">Depreciation vs §179 / bonus expensing is your CPA&apos;s call; not included in deductions above.</p>
-          <div className="mt-3 border-t border-stone-100 pt-2 text-sm">
+          <p className="mt-2 text-xs text-faint">Depreciation vs §179 / bonus expensing is your CPA&apos;s call; not included in deductions above.</p>
+          <div className="mt-3 border-t border-line-soft pt-2 text-sm">
             Sales tax paid on purchases: <Money cents={s.salesTaxPaidCents} showCents />
           </div>
         </Card>
@@ -189,7 +189,7 @@ function Overview({ year, onOpen }: { year: number; onOpen: (t: Tab) => void }) 
 
 const Row = ({ k, v }: { k: string; v: React.ReactNode }) => (
   <div className="flex justify-between gap-2">
-    <dt className="text-stone-600">{k}</dt>
+    <dt className="text-ink-2">{k}</dt>
     <dd>{v}</dd>
   </div>
 );
@@ -198,7 +198,7 @@ function LineTable({ rows, total, onOpen }: { rows: RouterOutputs["tax"]["summar
   if (!rows.length) return <Empty>Nothing recorded yet.</Empty>;
   return (
     <table className="w-full text-sm">
-      <thead className="text-left text-xs text-stone-500">
+      <thead className="text-left text-xs text-muted">
         <tr>
           <th className="py-1">Category</th>
           <th>Line</th>
@@ -208,20 +208,20 @@ function LineTable({ rows, total, onOpen }: { rows: RouterOutputs["tax"]["summar
       </thead>
       <tbody>
         {rows.map((l) => (
-          <tr key={l.id} className="cursor-pointer border-t border-stone-100 hover:bg-stone-50" onClick={onOpen}>
+          <tr key={l.id} className="cursor-pointer border-t border-line-soft hover:bg-surface-2" onClick={onOpen}>
             <td className="py-1.5">
               {l.label}
-              {l.missingReceipts > 0 && <span className="ml-1 text-xs text-amber-700">· {l.missingReceipts} missing receipt</span>}
-              {l.amountCents !== l.deductibleCents && <div className="text-xs text-stone-400">of {formatCents(l.amountCents)} spent</div>}
+              {l.missingReceipts > 0 && <span className="ml-1 text-xs text-warning-ink">· {l.missingReceipts} missing receipt</span>}
+              {l.amountCents !== l.deductibleCents && <div className="text-xs text-faint">of {formatCents(l.amountCents)} spent</div>}
             </td>
-            <td className="text-xs text-stone-500">{l.formLine ?? "—"}</td>
+            <td className="text-xs text-muted">{l.formLine ?? "—"}</td>
             <td className="text-right tabular">{l.count}</td>
             <td className="text-right">
               <Money cents={l.deductibleCents} />
             </td>
           </tr>
         ))}
-        <tr className="border-t-2 border-stone-200 font-semibold">
+        <tr className="border-t-2 border-line font-semibold">
           <td className="py-1.5" colSpan={3}>
             Total
           </td>
@@ -267,7 +267,7 @@ function Deductions({ year }: { year: number }) {
       ) : (
         <Card>
           <table className="w-full text-sm">
-            <thead className="text-left text-xs text-stone-500">
+            <thead className="text-left text-xs text-muted">
               <tr>
                 <th className="py-1.5">Date</th>
                 <th>Vendor</th>
@@ -280,21 +280,21 @@ function Deductions({ year }: { year: number }) {
             </thead>
             <tbody>
               {data.map((e) => (
-                <tr key={e.id} className="border-t border-stone-100 align-top">
+                <tr key={e.id} className="border-t border-line-soft align-top">
                   <td className="py-1.5 tabular whitespace-nowrap">{e.spentOn}</td>
                   <td>
                     {e.vendorName}
-                    {e.note && <div className="text-xs text-stone-500">{e.note}</div>}
+                    {e.note && <div className="text-xs text-muted">{e.note}</div>}
                   </td>
-                  <td className="text-xs">{e.projectName ?? <span className="text-stone-400">Overhead</span>}</td>
+                  <td className="text-xs">{e.projectName ?? <span className="text-faint">Overhead</span>}</td>
                   <td className="text-right">
                     <Money cents={e.amountCents} showCents />
-                    {e.deductibleCents !== e.amountCents && <div className="text-xs text-stone-400">deductible {formatCents(e.deductibleCents)}</div>}
+                    {e.deductibleCents !== e.amountCents && <div className="text-xs text-faint">deductible {formatCents(e.deductibleCents)}</div>}
                   </td>
                   <td className="pl-3">
                     <select
                       aria-label="Tax category"
-                      className={cx("max-w-56 rounded border bg-white px-1 py-0.5 text-xs", e.taxCategory === "other" ? "border-amber-400" : "border-stone-200")}
+                      className={cx("max-w-56 rounded border bg-surface px-1 py-0.5 text-xs", e.taxCategory === "other" ? "border-warning-line" : "border-line")}
                       value={e.taxCategory}
                       onChange={(ev) => update.mutate({ expenseId: e.id, taxCategory: ev.target.value })}
                     >
@@ -307,11 +307,11 @@ function Deductions({ year }: { year: number }) {
                   </td>
                   <td>
                     {e.paidBy === "PERSONAL" ? (
-                      <span className="text-xs text-stone-500">employee (reimbursed)</span>
+                      <span className="text-xs text-muted">employee (reimbursed)</span>
                     ) : (
                       <select
                         aria-label="Payment method"
-                        className="rounded border border-stone-200 bg-white px-1 py-0.5 text-xs"
+                        className="rounded border border-line bg-surface px-1 py-0.5 text-xs"
                         value={e.paymentMethod ?? ""}
                         onChange={(ev) => update.mutate({ expenseId: e.id, paymentMethod: (ev.target.value || null) as PaymentMethod | null })}
                       >
@@ -324,7 +324,7 @@ function Deductions({ year }: { year: number }) {
                       </select>
                     )}
                   </td>
-                  <td className="text-xs">{e.hasReceipt ? "🧾" : e.amountCents >= 75_00 ? <span className="text-amber-700">missing</span> : "—"}</td>
+                  <td className="text-xs">{e.hasReceipt ? "🧾" : e.amountCents >= 75_00 ? <span className="text-warning-ink">missing</span> : "—"}</td>
                 </tr>
               ))}
             </tbody>
@@ -389,10 +389,10 @@ function AddOverhead({ year, onDone }: { year: number; onDone: () => void }) {
 /* ───────────── 1099-NEC ───────────── */
 
 const STATUS_1099: Record<string, { label: string; cls: string }> = {
-  FILE: { label: "File 1099-NEC", cls: "bg-brand-50 text-brand-700" },
-  BELOW_THRESHOLD: { label: "Below threshold", cls: "bg-stone-100 text-stone-600" },
-  EXEMPT_CORPORATION: { label: "Exempt (corporation)", cls: "bg-stone-100 text-stone-600" },
-  NOT_SERVICE_VENDOR: { label: "Goods vendor", cls: "bg-stone-100 text-stone-500" },
+  FILE: { label: "File 1099-NEC", cls: "bg-accent-soft text-accent-ink" },
+  BELOW_THRESHOLD: { label: "Below threshold", cls: "bg-surface-3 text-ink-2" },
+  EXEMPT_CORPORATION: { label: "Exempt (corporation)", cls: "bg-surface-3 text-ink-2" },
+  NOT_SERVICE_VENDOR: { label: "Goods vendor", cls: "bg-surface-3 text-muted" },
 };
 
 function Form1099({ year }: { year: number }) {
@@ -404,14 +404,14 @@ function Form1099({ year }: { year: number }) {
   const filing = data.filter((r) => r.status === "FILE");
   return (
     <div className="space-y-4">
-      <p className="text-sm text-stone-600">
+      <p className="text-sm text-ink-2">
         Threshold for {year}: <strong>{summary.data ? formatCents(summary.data.settings.form1099ThresholdCents, { showCents: false }) : "…"}</strong>. Payments by card or
         payment apps are excluded (the processor reports them on 1099-K). Corporations are exempt except attorneys. {filing.length} vendor(s) need a 1099-NEC; due to
         recipients and the IRS by January 31.
       </p>
       <Card>
         <table className="w-full text-sm">
-          <thead className="text-left text-xs text-stone-500">
+          <thead className="text-left text-xs text-muted">
             <tr>
               <th className="py-1.5">Vendor</th>
               <th>Status</th>
@@ -425,10 +425,10 @@ function Form1099({ year }: { year: number }) {
           <tbody>
             {data.map((r) => (
               <Fragment key={r.vendor.id}>
-                <tr className="border-t border-stone-100 align-top">
+                <tr className="border-t border-line-soft align-top">
                   <td className="py-2">
                     <div className="font-medium">{r.vendor.name}</div>
-                    <div className="text-xs text-stone-500">{r.vendor.taxClassification ? VENDOR_TAX_CLASS_LABELS[r.vendor.taxClassification as VendorTaxClass] : "classification unknown"}</div>
+                    <div className="text-xs text-muted">{r.vendor.taxClassification ? VENDOR_TAX_CLASS_LABELS[r.vendor.taxClassification as VendorTaxClass] : "classification unknown"}</div>
                   </td>
                   <td>
                     <span className={cx("rounded px-1.5 py-0.5 text-xs font-medium whitespace-nowrap", STATUS_1099[r.status]!.cls)}>{STATUS_1099[r.status]!.label}</span>
@@ -436,17 +436,17 @@ function Form1099({ year }: { year: number }) {
                   <td className="text-right">
                     <Money cents={r.reportableCents} showCents />
                   </td>
-                  <td className="text-right text-stone-500">{r.excludedCardCents ? <Money cents={r.excludedCardCents} showCents /> : "—"}</td>
+                  <td className="text-right text-muted">{r.excludedCardCents ? <Money cents={r.excludedCardCents} showCents /> : "—"}</td>
                   <td className="pl-3 text-xs whitespace-nowrap">
                     {r.vendor.w9OnFile ? (
                       <span>
-                        ✓ on file{r.vendor.tinLast4 && <span className="text-stone-500"> · ***{r.vendor.tinLast4}</span>}
+                        ✓ on file{r.vendor.tinLast4 && <span className="text-muted"> · ***{r.vendor.tinLast4}</span>}
                       </span>
                     ) : (
-                      <span className="text-amber-700">missing</span>
+                      <span className="text-warning-ink">missing</span>
                     )}
                   </td>
-                  <td className="text-xs text-amber-800">
+                  <td className="text-xs text-warning-ink">
                     {r.issues.map((i) => (
                       <div key={i}>▲ {i}</div>
                     ))}
@@ -459,7 +459,7 @@ function Form1099({ year }: { year: number }) {
                 </tr>
                 {editing === r.vendor.id && (
                   <tr>
-                    <td colSpan={7} className="bg-stone-50 p-3">
+                    <td colSpan={7} className="bg-surface-2 p-3">
                       <VendorW9Form vendor={r.vendor} onDone={() => setEditing(null)} />
                     </td>
                   </tr>
@@ -583,7 +583,7 @@ function Mileage({ year }: { year: number }) {
           <Empty>No trips logged for {year}.</Empty>
         ) : (
           <table className="w-full text-sm">
-            <thead className="text-left text-xs text-stone-500">
+            <thead className="text-left text-xs text-muted">
               <tr>
                 <th className="py-1">Date</th>
                 <th>Driver</th>
@@ -596,7 +596,7 @@ function Mileage({ year }: { year: number }) {
             </thead>
             <tbody>
               {data.rows.map((r) => (
-                <tr key={r.id} className="border-t border-stone-100">
+                <tr key={r.id} className="border-t border-line-soft">
                   <td className="py-1.5 tabular">{r.date}</td>
                   <td>{r.user.name}</td>
                   <td>{r.purpose}</td>
@@ -615,7 +615,7 @@ function Mileage({ year }: { year: number }) {
             </tbody>
           </table>
         )}
-        <p className="mt-3 text-xs text-stone-400">Keep date, miles, and business purpose for each trip. If you use the standard rate for a vehicle, don&apos;t also deduct its fuel and repairs.</p>
+        <p className="mt-3 text-xs text-faint">Keep date, miles, and business purpose for each trip. If you use the standard rate for a vehicle, don&apos;t also deduct its fuel and repairs.</p>
       </Card>
     </div>
   );
@@ -624,10 +624,10 @@ function Mileage({ year }: { year: number }) {
 /* ───────────── Estimated taxes ───────────── */
 
 const Q_STATUS: Record<string, { icon: string; label: string; cls: string }> = {
-  PAID: { icon: "✓", label: "Covered", cls: "text-green-700" },
-  SHORT: { icon: "✕", label: "Short", cls: "text-red-700" },
-  DUE_SOON: { icon: "▲", label: "Due soon", cls: "text-amber-700" },
-  UPCOMING: { icon: "○", label: "Upcoming", cls: "text-stone-500" },
+  PAID: { icon: "✓", label: "Covered", cls: "text-good-ink" },
+  SHORT: { icon: "✕", label: "Short", cls: "text-critical-ink" },
+  DUE_SOON: { icon: "▲", label: "Due soon", cls: "text-warning-ink" },
+  UPCOMING: { icon: "○", label: "Upcoming", cls: "text-muted" },
 };
 
 function Estimates({ year }: { year: number }) {
@@ -646,7 +646,7 @@ function Estimates({ year }: { year: number }) {
   return (
     <div className="space-y-4">
       {sCorp && (
-        <p className="rounded-md bg-brand-50 px-3 py-2 text-sm text-brand-700">
+        <p className="rounded-md bg-accent-soft px-3 py-2 text-sm text-accent-ink">
           For a {data.entityType.replace("_", " ").toLowerCase()}, owners usually make estimated payments personally on their share of profit. Use this as a planning
           worksheet with your CPA.
         </p>
@@ -658,8 +658,8 @@ function Estimates({ year }: { year: number }) {
           { label: `Projected tax at ${(data.settings.estimatedTaxRateBps / 100).toFixed(1)}%`, v: formatCents(w.projectedTaxCents, { showCents: false }) },
           { label: w.method === "PRIOR_YEAR_SAFE_HARBOR" ? "Required (prior-year safe harbor)" : "Required (90% of current year)", v: formatCents(w.requiredAnnualCents, { showCents: false }) },
         ].map((t) => (
-          <div key={t.label} className="rounded-lg border border-stone-200 bg-white p-4">
-            <div className="text-xs text-stone-500">{t.label}</div>
+          <div key={t.label} className="rounded-lg border border-line bg-surface p-4">
+            <div className="text-xs text-muted">{t.label}</div>
             <div className="mt-1 text-xl font-semibold tabular">{t.v}</div>
           </div>
         ))}
@@ -667,7 +667,7 @@ function Estimates({ year }: { year: number }) {
 
       <Card title="Quarterly payments">
         <table className="w-full text-sm">
-          <thead className="text-left text-xs text-stone-500">
+          <thead className="text-left text-xs text-muted">
             <tr>
               <th className="py-1.5">Quarter</th>
               <th>Due</th>
@@ -680,7 +680,7 @@ function Estimates({ year }: { year: number }) {
           </thead>
           <tbody>
             {w.quarters.map((q) => (
-              <tr key={q.quarter} className="border-t border-stone-100">
+              <tr key={q.quarter} className="border-t border-line-soft">
                 <td className="py-1.5">Q{q.quarter}</td>
                 <td className="tabular">{q.dueDate}</td>
                 <td className="text-right"><Money cents={q.installmentCents} /></td>
@@ -696,7 +696,7 @@ function Estimates({ year }: { year: number }) {
             ))}
           </tbody>
         </table>
-        <p className="mt-3 text-xs text-stone-400">
+        <p className="mt-3 text-xs text-faint">
           Required = the lower of 90% of projected {year} tax ({formatCents(w.methods.current90, { showCents: false })}) or{" "}
           {w.methods.priorYearSafeHarbor != null
             ? `${data.settings.priorYearAgiOver150k ? "110" : "100"}% of last year's tax (${formatCents(w.methods.priorYearSafeHarbor, { showCents: false })})`
@@ -729,7 +729,7 @@ function Estimates({ year }: { year: number }) {
               Record
             </Button>
           </form>
-          <ul className="divide-y divide-stone-100 text-sm">
+          <ul className="divide-y divide-line-soft text-sm">
             {data.payments.map((p) => (
               <li key={p.id} className="flex items-center justify-between py-1.5">
                 <span>

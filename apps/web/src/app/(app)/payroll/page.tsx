@@ -42,13 +42,13 @@ export default function PayrollPage() {
             <ul className="-mx-2 space-y-0.5">
               {periods.data?.map((p) => (
                 <li key={p.id}>
-                  <button onClick={() => setSelected(p.id)} className={cx("w-full rounded-md px-2 py-1.5 text-left text-sm", p.id === selected ? "bg-brand-50 text-brand-700" : "hover:bg-stone-50")}>
+                  <button onClick={() => setSelected(p.id)} className={cx("w-full rounded-md px-2 py-1.5 text-left text-sm", p.id === selected ? "bg-accent-soft text-accent-ink" : "hover:bg-surface-2")}>
                     <div className="font-medium tabular">
                       {p.start} – {p.end.slice(5)}
                     </div>
                     <div className="flex flex-wrap gap-1 pt-0.5">
                       {Object.entries(p.counts).map(([s, n]) => (
-                        <span key={s} className="text-xs text-stone-500">
+                        <span key={s} className="text-xs text-muted">
                           {n} {s.toLowerCase()}
                         </span>
                       ))}
@@ -78,7 +78,7 @@ export default function PayrollPage() {
               }
             >
               {detail.data.notReady.length > 0 && (
-                <p className="mb-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                <p className="mb-3 rounded-md bg-warning-soft px-3 py-2 text-sm text-warning-ink">
                   Not yet approved: {detail.data.notReady.map((n) => `${n.name} (${n.status.toLowerCase()})`).join(", ")}
                 </p>
               )}
@@ -86,7 +86,7 @@ export default function PayrollPage() {
                 <Empty>No approved timesheets in this period yet.</Empty>
               ) : (
                 <table className="w-full text-sm">
-                  <thead className="text-left text-xs text-stone-500">
+                  <thead className="text-left text-xs text-muted">
                     <tr>
                       <th className="py-1.5">Name</th>
                       <th>Type</th>
@@ -101,11 +101,11 @@ export default function PayrollPage() {
                   </thead>
                   <tbody>
                     {detail.data.rows.map((r) => (
-                      <tr key={r.timesheetId} className="border-t border-stone-100">
+                      <tr key={r.timesheetId} className="border-t border-line-soft">
                         <td className="py-2">{r.name}</td>
                         <td className="text-xs">{r.classification === "W2" ? "W-2" : "1099"}</td>
                         <td className="text-right tabular">{r.regularHours.toFixed(2)}</td>
-                        <td className={cx("text-right tabular", r.overtimeHours > 0 && "font-semibold text-amber-800")}>{r.overtimeHours.toFixed(2)}</td>
+                        <td className={cx("text-right tabular", r.overtimeHours > 0 && "font-semibold text-warning-ink")}>{r.overtimeHours.toFixed(2)}</td>
                         <td className="text-right tabular">{r.doubleTimeHours.toFixed(2)}</td>
                         <td className="text-right">
                           <Money cents={r.hourlyRateCents} showCents />
@@ -124,19 +124,19 @@ export default function PayrollPage() {
                   </tbody>
                 </table>
               )}
-              <p className="mt-3 text-xs text-stone-400">
+              <p className="mt-3 text-xs text-faint">
                 Gross wages are estimates from approved hours. Your payroll provider calculates withholding, taxes and net pay. 1099 contractors are paid as vendors.
               </p>
             </Card>
           )}
           {period && period.exports.length > 0 && (
             <Card title="Exports">
-              <ul className="divide-y divide-stone-100 text-sm">
+              <ul className="divide-y divide-line-soft text-sm">
                 {period.exports.map((e) => (
                   <li key={e.id} className="flex items-center justify-between py-2">
                     <span>
                       {e.format === "PDF" ? "PDF summary" : "CSV"} · {e.createdAt.toLocaleString()}
-                      {e.paidAt && <span className="ml-2 text-green-700">paid {e.paidAt.toLocaleDateString()}</span>}
+                      {e.paidAt && <span className="ml-2 text-good-ink">paid {e.paidAt.toLocaleDateString()}</span>}
                     </span>
                     <span className="flex gap-2">
                       <Button variant="ghost" onClick={() => downloadFile(`/payroll-exports/${e.id}/download`, "payroll").catch((x) => setErr(errorMessage(x)))}>

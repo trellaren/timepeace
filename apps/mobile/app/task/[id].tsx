@@ -2,10 +2,12 @@ import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
 import { Elapsed } from "@/components/Elapsed";
-import { Button, Card, Field, StatusPill, colors, s } from "@/components/ui";
+import { Button, Card, Field, StatusPill, useColors, useStyles } from "@/components/ui";
 import { useField } from "@/lib/field";
 
 export default function TaskScreen() {
+  const s = useStyles();
+  const colors = useColors();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { day, timer, start, stop, setStatus, requestMaterials } = useField();
   const task = day?.tasks.find((t) => t.id === id);
@@ -28,7 +30,7 @@ export default function TaskScreen() {
         <StatusPill status={task.status} />
         {task.description && <Text style={s.body}>{task.description}</Text>}
         {task.estimatedMinutes != null && <Text style={s.muted}>Estimated: {Math.round(task.estimatedMinutes / 60)} hrs</Text>}
-        {task.statusNote && <Text style={{ color: colors.warning }}>{task.statusNote}</Text>}
+        {task.statusNote && <Text style={{ color: colors.warningInk }}>{task.statusNote}</Text>}
         {task.materialRequests.map((m) => (
           <Text key={m.id} style={s.muted}>
             Requested: {m.quantity ? `${m.quantity} × ` : ""}
@@ -39,7 +41,7 @@ export default function TaskScreen() {
 
       {isRunning ? (
         <Card style={{ alignItems: "center" }}>
-          <Elapsed since={timer.startedAt} style={{ fontSize: 44, fontWeight: "700", color: colors.brand }} />
+          <Elapsed since={timer.startedAt} style={{ fontSize: 44, fontWeight: "700", color: colors.accentInk }} />
           <Button big title="Stop timer" variant="danger" onPress={() => stop()} style={{ alignSelf: "stretch" }} />
         </Card>
       ) : (

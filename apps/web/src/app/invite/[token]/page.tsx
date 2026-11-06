@@ -12,8 +12,8 @@ import { saveSession } from "@/lib/session";
 function Frame({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen items-center justify-center p-6">
-      <div className="w-full max-w-sm space-y-4 rounded-lg border border-stone-200 bg-white p-6">
-        <h1 className="text-xl font-bold text-brand-700">timepeace</h1>
+      <div className="w-full max-w-sm space-y-4 rounded-lg border border-line bg-surface p-6">
+        <h1 className="text-xl font-bold text-accent-ink">timepeace</h1>
         {children}
       </div>
     </div>
@@ -52,15 +52,15 @@ export default function AcceptInvitePage() {
   if (!p || p.status === "INVALID") {
     return (
       <Frame>
-        <p className="text-sm text-stone-700">This invite link isn&apos;t valid anymore. It may have been used already, replaced by a newer link, or cancelled.</p>
-        <p className="text-sm text-stone-500">Ask whoever invited you for a new link, or <Link className="text-brand-700 underline" href="/login">sign in</Link> if you already joined.</p>
+        <p className="text-sm text-ink-2">This invite link isn&apos;t valid anymore. It may have been used already, replaced by a newer link, or cancelled.</p>
+        <p className="text-sm text-muted">Ask whoever invited you for a new link, or <Link className="text-accent-ink underline" href="/login">sign in</Link> if you already joined.</p>
       </Frame>
     );
   }
   if (p.status === "EXPIRED") {
     return (
       <Frame>
-        <p className="text-sm text-stone-700">
+        <p className="text-sm text-ink-2">
           This invite to <strong>{p.orgName}</strong> has expired. Ask {p.inviterName} to send a new link.
         </p>
       </Frame>
@@ -70,7 +70,7 @@ export default function AcceptInvitePage() {
   const newAccount = !p.existingAccount;
   return (
     <Frame>
-      <p className="text-sm text-stone-700">
+      <p className="text-sm text-ink-2">
         <strong>{p.inviterName}</strong> invited you to join <strong>{p.orgName}</strong> as {ROLE_LABELS[p.role].toLowerCase()}.
       </p>
       <form
@@ -98,7 +98,7 @@ export default function AcceptInvitePage() {
           </>
         ) : (
           <>
-            <p className="text-xs text-stone-500">You already have a Timepeace account with this email. Enter its password to add {p.orgName}.</p>
+            <p className="text-xs text-muted">You already have a Timepeace account with this email. Enter its password to add {p.orgName}.</p>
             <Input label="Password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </>
         )}

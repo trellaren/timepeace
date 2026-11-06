@@ -28,9 +28,9 @@ export default function FinancePage() {
           { label: "Paid crew time not on a task", v: <span className="tabular">{data.unallocatedPaidHours} hrs</span> },
           { label: "Tasks waiting on materials", v: <span className="tabular">{data.materialWaitHours} task-hrs</span> },
         ].map((t) => (
-          <div key={t.label} className="rounded-lg border border-stone-200 bg-white p-4">
-            <div className="text-xs text-stone-500">{t.label}</div>
-            <div className="mt-1 text-xl font-semibold text-stone-900">{t.v}</div>
+          <div key={t.label} className="rounded-lg border border-line bg-surface p-4">
+            <div className="text-xs text-muted">{t.label}</div>
+            <div className="mt-1 text-xl font-semibold text-ink">{t.v}</div>
           </div>
         ))}
       </div>
@@ -38,7 +38,7 @@ export default function FinancePage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="Projects" className="lg:col-span-2">
           <table className="w-full text-sm">
-            <thead className="text-left text-xs text-stone-500">
+            <thead className="text-left text-xs text-muted">
               <tr>
                 <th className="py-1.5">Project</th>
                 <th>Status</th>
@@ -52,12 +52,12 @@ export default function FinancePage() {
             </thead>
             <tbody>
               {data.projects.map((p) => (
-                <tr key={p.id} className="border-t border-stone-100">
+                <tr key={p.id} className="border-t border-line-soft">
                   <td className="py-2">
-                    <Link className="font-medium hover:text-brand-600" href={`/projects/${p.id}`}>
+                    <Link className="font-medium hover:text-accent-ink" href={`/projects/${p.id}`}>
                       {p.name}
                     </Link>
-                    <div className="text-xs text-stone-400">
+                    <div className="text-xs text-faint">
                       {p.projectType} · {p.contractType.replace(/_/g, " ").toLowerCase()} · {Math.round(p.percentComplete * 100)}% complete
                     </div>
                   </td>
@@ -68,13 +68,13 @@ export default function FinancePage() {
                   <td className="text-right"><Money cents={p.totalBudgetCents} /></td>
                   <td className="text-right"><Money cents={p.totalActualCents} /></td>
                   <td className="text-right"><Money cents={p.estimateAtCompletionCents} /></td>
-                  <td className={p.projectedProfitCents < 0 ? "text-right text-red-700" : "text-right"}><Money cents={p.projectedProfitCents} /></td>
+                  <td className={p.projectedProfitCents < 0 ? "text-right text-critical-ink" : "text-right"}><Money cents={p.projectedProfitCents} /></td>
                   <td className="text-right tabular">{pct(p.projectedMarginBps)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <p className="mt-3 text-xs text-stone-400">
+          <p className="mt-3 text-xs text-faint">
             Estimate at completion extrapolates cost to date by percent complete (hours-weighted). Below 5% complete the budget is used instead. Labor includes all paid
             shift time: time not on a task is charged to the job the crew clocked into.
           </p>
@@ -82,12 +82,12 @@ export default function FinancePage() {
 
         <Card title="Estimate accuracy by trade (completed tasks)">
           {data.estimateAccuracy.length === 0 ? (
-            <p className="text-sm text-stone-500">Complete some tasks with time logged to see how your estimates hold up.</p>
+            <p className="text-sm text-muted">Complete some tasks with time logged to see how your estimates hold up.</p>
           ) : (
             <>
-              <p className="mb-3 text-xs text-stone-500">Actual labor hours vs estimate. Bars right of center ran over; left ran under.</p>
+              <p className="mb-3 text-xs text-muted">Actual labor hours vs estimate. Bars right of center ran over; left ran under.</p>
               <table className="w-full text-sm">
-                <thead className="text-left text-xs text-stone-500">
+                <thead className="text-left text-xs text-muted">
                   <tr>
                     <th className="py-1">Cost code</th>
                     <th className="text-right">Est. hrs</th>
@@ -101,16 +101,16 @@ export default function FinancePage() {
                     const o = e.overrunPct ?? 0;
                     const w = `${(Math.abs(o) / maxOverrun) * 50}%`;
                     return (
-                      <tr key={e.label} className="border-t border-stone-100" title={`${e.tasks} task(s)`}>
+                      <tr key={e.label} className="border-t border-line-soft" title={`${e.tasks} task(s)`}>
                         <td className="py-1.5">{e.label}</td>
                         <td className="text-right tabular">{Math.round(e.estimatedMinutes / 60)}</td>
                         <td className="text-right tabular">{Math.round(e.actualMinutes / 60)}</td>
                         <td className="pl-3">
                           <div className="relative h-3">
-                            <div className="absolute inset-y-0 left-1/2 w-px bg-stone-400" />
+                            <div className="absolute inset-y-0 left-1/2 w-px bg-faint" />
                             <div
                               className={o >= 0 ? "absolute inset-y-0.5 left-1/2 rounded-r" : "absolute inset-y-0.5 right-1/2 rounded-l"}
-                              style={{ width: w, background: o >= 0 ? "#e34948" : "#2a78d6" }}
+                              style={{ width: w, background: o >= 0 ? "var(--color-diverge-over)" : "var(--color-diverge-under)" }}
                             />
                           </div>
                         </td>
@@ -126,7 +126,7 @@ export default function FinancePage() {
 
         <Card title="Margin by project type">
           <table className="w-full text-sm">
-            <thead className="text-left text-xs text-stone-500">
+            <thead className="text-left text-xs text-muted">
               <tr>
                 <th className="py-1">Type</th>
                 <th className="text-right">Jobs</th>
@@ -139,7 +139,7 @@ export default function FinancePage() {
               {data.marginByProjectType
                 .sort((a, b) => (b.marginBps ?? 0) - (a.marginBps ?? 0))
                 .map((r) => (
-                  <tr key={r.projectType} className="border-t border-stone-100">
+                  <tr key={r.projectType} className="border-t border-line-soft">
                     <td className="py-1.5">{r.projectType}</td>
                     <td className="text-right tabular">{r.projects}</td>
                     <td className="text-right"><Money cents={r.revenueCents} /></td>
@@ -149,7 +149,7 @@ export default function FinancePage() {
                 ))}
             </tbody>
           </table>
-          <p className="mt-3 text-xs text-stone-400">Projected margins include jobs still in progress; compare completed jobs as history builds up.</p>
+          <p className="mt-3 text-xs text-faint">Projected margins include jobs still in progress; compare completed jobs as history builds up.</p>
         </Card>
       </div>
     </>

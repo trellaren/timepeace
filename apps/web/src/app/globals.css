@@ -1,29 +1,73 @@
 @import "tailwindcss";
 
+/*
+ * Colors come only from the theme tokens below. Their values live in @timepeace/shared (theme.ts)
+ * and are written per theme by the root layout as --tp-* variables on <html data-theme="…">.
+ * The default Tailwind palette is removed so a raw color (stone-500, red-700…) can't creep back
+ * in and ignore the theme.
+ */
+@theme inline {
+  --color-*: initial;
+  --color-canvas: var(--tp-canvas);
+  --color-surface: var(--tp-surface);
+  --color-surface-2: var(--tp-surface-2);
+  --color-surface-3: var(--tp-surface-3);
+  --color-line-soft: var(--tp-line-soft);
+  --color-line: var(--tp-line);
+  --color-line-strong: var(--tp-line-strong);
+  --color-ink: var(--tp-ink);
+  --color-ink-2: var(--tp-ink-2);
+  --color-muted: var(--tp-muted);
+  --color-faint: var(--tp-faint);
+  --color-accent: var(--tp-accent);
+  --color-accent-strong: var(--tp-accent-strong);
+  --color-accent-ink: var(--tp-accent-ink);
+  --color-accent-soft: var(--tp-accent-soft);
+  --color-accent-ring: var(--tp-accent-ring);
+  --color-on-accent: var(--tp-on-accent);
+  --color-on-accent-muted: var(--tp-on-accent-muted);
+  --color-good: var(--tp-good);
+  --color-good-strong: var(--tp-good-strong);
+  --color-good-soft: var(--tp-good-soft);
+  --color-good-soft-2: var(--tp-good-soft-2);
+  --color-good-ink: var(--tp-good-ink);
+  --color-warning: var(--tp-warning);
+  --color-warning-soft: var(--tp-warning-soft);
+  --color-warning-ink: var(--tp-warning-ink);
+  --color-warning-line: var(--tp-warning-line);
+  --color-serious: var(--tp-serious);
+  --color-critical: var(--tp-critical);
+  --color-critical-soft: var(--tp-critical-soft);
+  --color-critical-ink: var(--tp-critical-ink);
+  --color-critical-line: var(--tp-critical-line);
+  --color-violet-soft: var(--tp-violet-soft);
+  --color-violet-ink: var(--tp-violet-ink);
+  --color-series-1: var(--tp-series-1);
+  --color-track: var(--tp-track);
+  --color-diverge-over: var(--tp-diverge-over);
+  --color-diverge-under: var(--tp-diverge-under);
+}
+
 @theme {
-  --color-brand-50: #eef5fd;
-  --color-brand-100: #cde2fb;
-  --color-brand-500: #2a78d6;
-  --color-brand-600: #256abf;
-  --color-brand-700: #1c5cab;
-  --color-good: #0ca30c;
-  --color-warning: #fab219;
-  --color-serious: #ec835a;
-  --color-critical: #d03b3b;
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
-:root {
-  --surface-1: #fcfcfb;
-  --text-primary: #0b0b0b;
-  --text-secondary: #52514e;
-  --series-1: #2a78d6;
-  --track: #e7e6e1;
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-line);
+  }
+  ::placeholder {
+    color: var(--color-faint);
+  }
 }
 
 body {
-  background: #f5f5f3;
-  color: var(--text-primary);
+  background: var(--color-canvas);
+  color: var(--color-ink);
 }
 
 .tabular {

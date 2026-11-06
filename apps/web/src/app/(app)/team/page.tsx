@@ -82,7 +82,7 @@ export default function TeamPage() {
             <Empty>No pending invites.</Empty>
           ) : (
             <table className="w-full text-sm">
-              <thead className="text-left text-xs text-stone-500">
+              <thead className="text-left text-xs text-muted">
                 <tr>
                   <th className="py-1.5">Person</th>
                   <th>Role</th>
@@ -93,27 +93,27 @@ export default function TeamPage() {
               </thead>
               <tbody>
                 {invites.data.map((i) => (
-                  <tr key={i.id} className="border-t border-stone-100">
+                  <tr key={i.id} className="border-t border-line-soft">
                     <td className="py-2">
                       <div className="font-medium">{i.name}</div>
-                      <div className="text-xs text-stone-500">{i.email}</div>
+                      <div className="text-xs text-muted">{i.email}</div>
                     </td>
                     <td>
                       {ROLE_LABELS[i.role]}
-                      {i.classification && <div className="text-xs text-stone-500">{CLASS_LABEL[i.classification]}</div>}
+                      {i.classification && <div className="text-xs text-muted">{CLASS_LABEL[i.classification]}</div>}
                     </td>
                     <td className="text-xs">
                       {i.status === "EXPIRED" ? (
-                        <span className="text-amber-700">
+                        <span className="text-warning-ink">
                           <span aria-hidden>▲</span> Expired
                         </span>
                       ) : (
-                        <span className="text-stone-600">
+                        <span className="text-ink-2">
                           <span aria-hidden>○</span> Waiting · expires {new Date(i.expiresAt).toLocaleDateString()}
                         </span>
                       )}
                     </td>
-                    <td className="text-xs text-stone-500">{i.invitedBy}</td>
+                    <td className="text-xs text-muted">{i.invitedBy}</td>
                     <td className="space-x-1 text-right whitespace-nowrap">
                       <Button
                         variant="ghost"
@@ -134,14 +134,14 @@ export default function TeamPage() {
               </tbody>
             </table>
           )}
-          <p className="mt-2 text-xs text-stone-400">Links work once and expire after {INVITE_TTL_DAYS} days. For security they&apos;re only shown when created; use “New link” to send another.</p>
+          <p className="mt-2 text-xs text-faint">Links work once and expire after {INVITE_TTL_DAYS} days. For security they&apos;re only shown when created; use “New link” to send another.</p>
         </Card>
 
         <Card
           title="Members"
           actions={
             inactiveCount > 0 && (
-              <label className="flex items-center gap-2 text-sm text-stone-600">
+              <label className="flex items-center gap-2 text-sm text-ink-2">
                 <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} /> Show deactivated ({inactiveCount})
               </label>
             )
@@ -202,7 +202,7 @@ function InviteForm({ myRole, onCreated }: { myRole: Role; onCreated: (s: Shared
             {seePay ? (
               <Input label="Starting pay ($/hour, optional)" inputMode="decimal" value={f.rate} onChange={(e) => setF({ ...f, rate: e.target.value })} />
             ) : (
-              <p className="self-end pb-2 text-xs text-stone-500">An owner or HR sets their pay rate.</p>
+              <p className="self-end pb-2 text-xs text-muted">An owner or HR sets their pay rate.</p>
             )}
           </>
         )}
@@ -235,14 +235,14 @@ function ShareLink({ s, onClose }: { s: Shared; onClose: () => void }) {
         >
           {copied ? "Copied ✓" : "Copy link"}
         </Button>
-        <a href={sms} className="rounded-md border border-stone-300 bg-white px-3 py-1.5 text-sm hover:bg-stone-50">
+        <a href={sms} className="rounded-md border border-line-strong bg-surface px-3 py-1.5 text-sm hover:bg-surface-2">
           Text it
         </a>
-        <a href={mail} className="rounded-md border border-stone-300 bg-white px-3 py-1.5 text-sm hover:bg-stone-50">
+        <a href={mail} className="rounded-md border border-line-strong bg-surface px-3 py-1.5 text-sm hover:bg-surface-2">
           Email it
         </a>
       </div>
-      <p className="mt-2 text-xs text-stone-500">Anyone with this link can join as this person, so send it only to them. It works once and expires in {INVITE_TTL_DAYS} days.</p>
+      <p className="mt-2 text-xs text-muted">Anyone with this link can join as this person, so send it only to them. It works once and expires in {INVITE_TTL_DAYS} days.</p>
     </Card>
   );
 }
@@ -261,7 +261,7 @@ function MembersTable({ rows, myRole }: { rows: Member[]; myRole: Role }) {
     <>
       <ErrorText error={error ? errorMessage(error) : null} />
       <table className="w-full text-sm">
-        <thead className="text-left text-xs text-stone-500">
+        <thead className="text-left text-xs text-muted">
           <tr>
             <th className="py-1.5">Person</th>
             <th>Role</th>
@@ -298,21 +298,21 @@ function MemberRow(p: { m: Member; myRole: Role; seePay: boolean; editingPay: bo
   const cols = p.seePay ? 5 : 4;
   return (
     <>
-      <tr className={cx("border-t border-stone-100 align-top", !m.active && "text-stone-400")}>
+      <tr className={cx("border-t border-line-soft align-top", !m.active && "text-faint")}>
         <td className="py-2">
           <div className="font-medium">
             {m.name}
-            {m.isYou && <span className="ml-1 text-xs font-normal text-stone-400">(you)</span>}
-            {!m.active && <span className="ml-2 rounded bg-stone-100 px-1.5 py-0.5 text-xs font-normal text-stone-600">deactivated</span>}
+            {m.isYou && <span className="ml-1 text-xs font-normal text-faint">(you)</span>}
+            {!m.active && <span className="ml-2 rounded bg-surface-3 px-1.5 py-0.5 text-xs font-normal text-ink-2">deactivated</span>}
           </div>
-          <div className="text-xs text-stone-500">
+          <div className="text-xs text-muted">
             {m.email}
             {m.phone && ` · ${m.phone}`}
           </div>
         </td>
         <td>
           {p.myRole === "OWNER" && m.canManage && m.active ? (
-            <select aria-label={`Role for ${m.name}`} className="rounded border border-stone-200 bg-white px-1 py-0.5 text-sm" value={m.role} disabled={p.busy} onChange={(e) => p.onRole(e.target.value as Role)}>
+            <select aria-label={`Role for ${m.name}`} className="rounded border border-line bg-surface px-1 py-0.5 text-sm" value={m.role} disabled={p.busy} onChange={(e) => p.onRole(e.target.value as Role)}>
               {ROLES.map((r) => (
                 <option key={r} value={r}>
                   {ROLE_LABELS[r]}
@@ -322,7 +322,7 @@ function MemberRow(p: { m: Member; myRole: Role; seePay: boolean; editingPay: bo
           ) : (
             ROLE_LABELS[m.role]
           )}
-          {m.classification && m.role === "WORKER" && <div className="text-xs text-stone-500">{CLASS_LABEL[m.classification]}</div>}
+          {m.classification && m.role === "WORKER" && <div className="text-xs text-muted">{CLASS_LABEL[m.classification]}</div>}
         </td>
         {p.seePay && (
           <td className="whitespace-nowrap">
@@ -331,18 +331,18 @@ function MemberRow(p: { m: Member; myRole: Role; seePay: boolean; editingPay: bo
                 {m.hourlyRateCents != null ? (
                   <span className="tabular">{formatCents(m.hourlyRateCents)}/hr</span>
                 ) : (
-                  <span className="text-amber-700">
+                  <span className="text-warning-ink">
                     <span aria-hidden>▲</span> No rate set
                   </span>
                 )}
-                {m.rateEffectiveDate && <div className="text-xs text-stone-400">since {m.rateEffectiveDate}</div>}
+                {m.rateEffectiveDate && <div className="text-xs text-faint">since {m.rateEffectiveDate}</div>}
               </button>
             ) : (
-              <span className="text-stone-400">—</span>
+              <span className="text-faint">—</span>
             )}
           </td>
         )}
-        <td className="text-xs text-stone-500">{m.lastActiveAt ? new Date(m.lastActiveAt).toLocaleDateString() : "never"}</td>
+        <td className="text-xs text-muted">{m.lastActiveAt ? new Date(m.lastActiveAt).toLocaleDateString() : "never"}</td>
         <td className="text-right">
           {m.canManage &&
             (m.active ? (
@@ -358,7 +358,7 @@ function MemberRow(p: { m: Member; myRole: Role; seePay: boolean; editingPay: bo
       </tr>
       {p.editingPay && (
         <tr>
-          <td colSpan={cols} className="bg-stone-50 p-3">
+          <td colSpan={cols} className="bg-surface-2 p-3">
             <PayForm m={m} onDone={p.onEditPay} />
           </td>
         </tr>
@@ -403,7 +403,7 @@ function PayForm({ m, onDone }: { m: Member; onDone: () => void }) {
         Save pay
       </Button>
       <ErrorText error={save.error ? errorMessage(save.error) : null} />
-      <p className="w-full text-xs text-stone-500">Hours on or after the effective date use the new rate. Earlier hours keep the old one.</p>
+      <p className="w-full text-xs text-muted">Hours on or after the effective date use the new rate. Earlier hours keep the old one.</p>
     </form>
   );
 }

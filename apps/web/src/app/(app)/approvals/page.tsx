@@ -27,10 +27,10 @@ function Approvals() {
   return (
     <>
       <PageHeader title="Approvals" subtitle="Review hours and expenses before they go to payroll" />
-      <div className="mb-4 flex gap-1 border-b border-stone-200">
+      <div className="mb-4 flex gap-1 border-b border-line">
         {(["timesheets", "expenses", "materials"] as Tab[]).map((t) => (
-          <button key={t} onClick={() => router.replace(`/approvals?tab=${t}`)} className={cx("-mb-px border-b-2 px-4 py-2 text-sm capitalize", tab === t ? "border-brand-600 font-medium text-brand-700" : "border-transparent text-stone-500")}>
-            {t === "materials" ? "Material requests" : t} {counts[t] ? <span className="ml-1 rounded-full bg-brand-50 px-1.5 text-xs text-brand-700">{counts[t]}</span> : null}
+          <button key={t} onClick={() => router.replace(`/approvals?tab=${t}`)} className={cx("-mb-px border-b-2 px-4 py-2 text-sm capitalize", tab === t ? "border-accent font-medium text-accent-ink" : "border-transparent text-muted")}>
+            {t === "materials" ? "Material requests" : t} {counts[t] ? <span className="ml-1 rounded-full bg-accent-soft px-1.5 text-xs text-accent-ink">{counts[t]}</span> : null}
           </button>
         ))}
       </div>
@@ -87,9 +87,9 @@ function SheetCard({ sheet, onReview, busy }: { sheet: Sheet; onReview: (d: "APP
     <Card
       title={
         <span>
-          {sheet.user.name} <span className="font-normal text-stone-500">· {sheet.period.start} – {sheet.period.end}</span>
-          {sheet.isContractor && <span className="ml-2 rounded bg-violet-50 px-1.5 text-xs text-violet-800">1099</span>}
-          {sheet.needsReview && <span className="ml-2 rounded bg-red-50 px-1.5 text-xs text-red-700">⚠ shift needs review</span>}
+          {sheet.user.name} <span className="font-normal text-muted">· {sheet.period.start} – {sheet.period.end}</span>
+          {sheet.isContractor && <span className="ml-2 rounded bg-violet-soft px-1.5 text-xs text-violet-ink">1099</span>}
+          {sheet.needsReview && <span className="ml-2 rounded bg-critical-soft px-1.5 text-xs text-critical-ink">⚠ shift needs review</span>}
         </span>
       }
       actions={
@@ -120,22 +120,22 @@ function SheetCard({ sheet, onReview, busy }: { sheet: Sheet; onReview: (d: "APP
         <div>
           Regular <Hours minutes={sheet.totals.regularMinutes} />
         </div>
-        <div className={cx(sheet.totals.overtimeMinutes > 0 && "font-semibold text-amber-800")}>
+        <div className={cx(sheet.totals.overtimeMinutes > 0 && "font-semibold text-warning-ink")}>
           Overtime <Hours minutes={sheet.totals.overtimeMinutes} />
         </div>
         {sheet.totals.doubleTimeMinutes > 0 && (
-          <div className="font-semibold text-red-700">
+          <div className="font-semibold text-critical-ink">
             Double time <Hours minutes={sheet.totals.doubleTimeMinutes} />
           </div>
         )}
-        <div className="text-stone-500">
+        <div className="text-muted">
           On tasks <Hours minutes={sheet.allocatedMinutes} /> · not on a task <Hours minutes={unallocated} /> (paid; setup, travel, cleanup)
         </div>
       </div>
       <div className="mt-3 grid grid-cols-7 gap-1 text-center text-xs">
         {byDay.map((d) => (
-          <div key={d.date} className="rounded bg-stone-50 p-1.5">
-            <div className="text-stone-500">{new Date(`${d.date}T12:00:00`).toLocaleDateString(undefined, { weekday: "short", month: "numeric", day: "numeric" })}</div>
+          <div key={d.date} className="rounded bg-surface-2 p-1.5">
+            <div className="text-muted">{new Date(`${d.date}T12:00:00`).toLocaleDateString(undefined, { weekday: "short", month: "numeric", day: "numeric" })}</div>
             <div className="font-medium tabular">{formatMinutes(d.workedMinutes)}</div>
           </div>
         ))}
@@ -163,19 +163,19 @@ function ShiftRow({ shift }: { shift: Sheet["shifts"][number] }) {
   const [reason, setReason] = useState("");
   const edit = useMutation(trpc.approvals.editShift.mutationOptions({ onSuccess: () => { setEditing(false); qc.invalidateQueries({ queryKey: trpc.approvals.pathKey() }); } }));
   return (
-    <div className={cx("rounded-md border p-3 text-xs", shift.flag === "AUTO_CLOSED" ? "border-red-200 bg-red-50/40" : "border-stone-100")}>
+    <div className={cx("rounded-md border p-3 text-xs", shift.flag === "AUTO_CLOSED" ? "border-critical-line bg-critical-soft/40" : "border-line-soft")}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="text-sm">
           <span className="font-medium tabular">
             {shift.clockInAt.toLocaleDateString(undefined, { weekday: "short", month: "numeric", day: "numeric" })} · {fmtTime(shift.clockInAt)} – {shift.clockOutAt ? fmtTime(shift.clockOutAt) : "still clocked in"}
           </span>
-          <span className="ml-2 text-stone-500">
+          <span className="ml-2 text-muted">
             paid {formatMinutes(shift.paidMinutes)} · on tasks {formatMinutes(shift.allocatedMinutes)}
             {shift.projectName && ` · clocked in at ${shift.projectName}`}
             {shift.hasGeo && " · 📍"}
           </span>
-          {shift.flag === "AUTO_CLOSED" && <div className="mt-1 text-red-700">⚠ No clock-out recorded; closed at the last activity. Confirm the real end time with the worker.</div>}
-          {shift.flag === "EDITED" && <span className="ml-2 text-stone-400">(edited)</span>}
+          {shift.flag === "AUTO_CLOSED" && <div className="mt-1 text-critical-ink">⚠ No clock-out recorded; closed at the last activity. Confirm the real end time with the worker.</div>}
+          {shift.flag === "EDITED" && <span className="ml-2 text-faint">(edited)</span>}
         </div>
         <Button variant="ghost" onClick={() => setEditing(!editing)}>
           {editing ? "Cancel" : shift.flag === "AUTO_CLOSED" ? "Confirm / fix times" : "Edit"}
@@ -189,14 +189,14 @@ function ShiftRow({ shift }: { shift: Sheet["shifts"][number] }) {
             edit.mutate({ id: shift.id, clockInAt: new Date(inAt).toISOString(), clockOutAt: new Date(outAt).toISOString(), reason });
           }}
         >
-          <label className="flex flex-col gap-1">Clock in<input type="datetime-local" className="rounded border border-stone-300 px-1.5 py-1" value={inAt} onChange={(e) => setInAt(e.target.value)} /></label>
-          <label className="flex flex-col gap-1">Clock out<input type="datetime-local" className="rounded border border-stone-300 px-1.5 py-1" value={outAt} onChange={(e) => setOutAt(e.target.value)} required /></label>
-          <label className="flex flex-1 flex-col gap-1">Reason (saved to audit log)<input className="rounded border border-stone-300 px-1.5 py-1" value={reason} onChange={(e) => setReason(e.target.value)} required minLength={3} placeholder="e.g. Confirmed with worker: left at 4:15" /></label>
+          <label className="flex flex-col gap-1">Clock in<input type="datetime-local" className="rounded border border-line-strong px-1.5 py-1" value={inAt} onChange={(e) => setInAt(e.target.value)} /></label>
+          <label className="flex flex-col gap-1">Clock out<input type="datetime-local" className="rounded border border-line-strong px-1.5 py-1" value={outAt} onChange={(e) => setOutAt(e.target.value)} required /></label>
+          <label className="flex flex-1 flex-col gap-1">Reason (saved to audit log)<input className="rounded border border-line-strong px-1.5 py-1" value={reason} onChange={(e) => setReason(e.target.value)} required minLength={3} placeholder="e.g. Confirmed with worker: left at 4:15" /></label>
           <Button type="submit" disabled={edit.isPending}>Save</Button>
-          {edit.error && <span className="text-red-700">{errorMessage(edit.error)}</span>}
+          {edit.error && <span className="text-critical-ink">{errorMessage(edit.error)}</span>}
         </form>
       )}
-      <ul className="mt-2 space-y-0.5 text-stone-600">
+      <ul className="mt-2 space-y-0.5 text-ink-2">
         {shift.breaks.map((b) => (
           <li key={b.id}>
             Break {fmtTime(b.startedAt)} – {b.endedAt ? fmtTime(b.endedAt) : "open"}
@@ -207,7 +207,7 @@ function ShiftRow({ shift }: { shift: Sheet["shifts"][number] }) {
             • {e.projectName} · {e.taskTitle ?? "—"} · {fmtTime(e.startedAt)}–{e.endedAt ? fmtTime(e.endedAt) : "running"} · <span className="tabular">{formatMinutes(e.minutes)}</span>
           </li>
         ))}
-        {shift.unallocatedMinutes > 0 && <li className="text-stone-400">• Not on a task: {formatMinutes(shift.unallocatedMinutes)} (paid)</li>}
+        {shift.unallocatedMinutes > 0 && <li className="text-faint">• Not on a task: {formatMinutes(shift.unallocatedMinutes)} (paid)</li>}
       </ul>
     </div>
   );
@@ -224,7 +224,7 @@ function Expenses() {
     <Card>
       <ErrorText error={review.error ? errorMessage(review.error) : null} />
       <table className="w-full text-sm">
-        <thead className="text-left text-xs text-stone-500">
+        <thead className="text-left text-xs text-muted">
           <tr>
             <th className="py-1.5">Date</th>
             <th>Submitted by</th>
@@ -237,21 +237,21 @@ function Expenses() {
         </thead>
         <tbody>
           {data.map((e) => (
-            <tr key={e.id} className="border-t border-stone-100">
+            <tr key={e.id} className="border-t border-line-soft">
               <td className="py-2 tabular">{e.spentOn.toISOString().slice(0, 10)}</td>
               <td>{e.user.name}</td>
               <td>
                 {e.vendorName}
-                {e.note && <div className="text-xs text-stone-500">{e.note}</div>}
+                {e.note && <div className="text-xs text-muted">{e.note}</div>}
               </td>
               <td className="text-xs">
                 {e.project?.name ?? "Company overhead"}
-                {e.task && <div className="text-stone-500">{e.task.title}</div>}
+                {e.task && <div className="text-muted">{e.task.title}</div>}
               </td>
               <td className="text-right">
                 <Money cents={e.amountCents} showCents />
               </td>
-              <td className="text-xs">{e.paidBy === "PERSONAL" ? <span className="text-amber-800">personal: reimburse</span> : "company"}</td>
+              <td className="text-xs">{e.paidBy === "PERSONAL" ? <span className="text-warning-ink">personal: reimburse</span> : "company"}</td>
               <td className="text-right whitespace-nowrap">
                 <Button
                   variant="ghost"
@@ -282,7 +282,7 @@ function Materials() {
   return (
     <Card>
       <table className="w-full text-sm">
-        <thead className="text-left text-xs text-stone-500">
+        <thead className="text-left text-xs text-muted">
           <tr>
             <th className="py-1.5">Requested</th>
             <th>Item</th>
@@ -294,16 +294,16 @@ function Materials() {
         </thead>
         <tbody>
           {data.map((m) => (
-            <tr key={m.id} className="border-t border-stone-100">
+            <tr key={m.id} className="border-t border-line-soft">
               <td className="py-2 text-xs tabular">{m.createdAt.toLocaleDateString()}</td>
               <td>
                 {m.quantity && <strong>{m.quantity} × </strong>}
                 {m.description}
-                {m.neededBy && <div className="text-xs text-stone-500">needed by {m.neededBy.toISOString().slice(0, 10)}</div>}
+                {m.neededBy && <div className="text-xs text-muted">needed by {m.neededBy.toISOString().slice(0, 10)}</div>}
               </td>
               <td className="text-xs">
                 {m.task.project.name}
-                <div className="text-stone-500">{m.task.title}</div>
+                <div className="text-muted">{m.task.title}</div>
               </td>
               <td>{m.requestedBy.name}</td>
               <td>

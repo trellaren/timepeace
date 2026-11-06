@@ -35,9 +35,9 @@ function ManagerQueues() {
   return (
     <div className="grid gap-4 sm:grid-cols-3">
       {tiles.map((t) => (
-        <Link key={t.label} href={t.href} className="rounded-lg border border-stone-200 bg-white p-4 hover:border-brand-500">
-          <div className="text-3xl font-semibold tabular text-stone-900">{t.value ?? "–"}</div>
-          <div className="mt-1 text-sm text-stone-500">{t.label}</div>
+        <Link key={t.label} href={t.href} className="rounded-lg border border-line bg-surface p-4 hover:border-accent">
+          <div className="text-3xl font-semibold tabular text-ink">{t.value ?? "–"}</div>
+          <div className="mt-1 text-sm text-muted">{t.label}</div>
         </Link>
       ))}
     </div>
@@ -48,12 +48,12 @@ function ProjectHealth() {
   const trpc = useTRPC();
   const { data, isLoading } = useQuery(trpc.finance.portfolio.queryOptions());
   return (
-    <Card title="Project health" actions={<Link href="/finance" className="text-sm text-brand-600">Finance details →</Link>}>
+    <Card title="Project health" actions={<Link href="/finance" className="text-sm text-accent-ink">Finance details →</Link>}>
       {isLoading || !data ? (
         <Loading />
       ) : (
         <table className="w-full text-sm">
-          <thead className="text-left text-xs text-stone-500">
+          <thead className="text-left text-xs text-muted">
             <tr>
               <th className="py-2">Project</th>
               <th>Status</th>
@@ -65,12 +65,12 @@ function ProjectHealth() {
           </thead>
           <tbody>
             {data.projects.map((p) => (
-              <tr key={p.id} className="border-t border-stone-100">
+              <tr key={p.id} className="border-t border-line-soft">
                 <td className="py-2">
-                  <Link href={`/projects/${p.id}`} className="font-medium text-stone-800 hover:text-brand-600">
+                  <Link href={`/projects/${p.id}`} className="font-medium text-ink hover:text-accent-ink">
                     {p.name}
                   </Link>
-                  <div className="text-xs text-stone-400">{p.projectType}</div>
+                  <div className="text-xs text-faint">{p.projectType}</div>
                 </td>
                 <td>
                   <StatusBadge status={p.status} />
@@ -95,9 +95,9 @@ function PayrollStatus() {
   const { data } = useQuery(trpc.payroll.periods.queryOptions());
   const ready = data?.filter((p) => p.counts.APPROVED) ?? [];
   return (
-    <Card title="Payroll" actions={<Link href="/payroll" className="text-sm text-brand-600">Open payroll →</Link>}>
+    <Card title="Payroll" actions={<Link href="/payroll" className="text-sm text-accent-ink">Open payroll →</Link>}>
       {ready.length === 0 ? (
-        <p className="text-sm text-stone-500">No approved timesheets waiting for export.</p>
+        <p className="text-sm text-muted">No approved timesheets waiting for export.</p>
       ) : (
         <ul className="space-y-1 text-sm">
           {ready.map((p) => (
@@ -116,7 +116,7 @@ function WorkerWeek() {
   const { data } = useQuery(trpc.field.myPeriod.queryOptions());
   return (
     <Card title="This pay period">
-      <p className="mb-2 text-sm text-stone-500">Use the Timepeace mobile app to start and stop tasks, log expenses and submit your hours.</p>
+      <p className="mb-2 text-sm text-muted">Use the Timepeace mobile app to start and stop tasks, log expenses and submit your hours.</p>
       {data && (
         <p className="text-sm">
           {data.period.start} – {data.period.end}: <Hours minutes={data.totals.totalMinutes} /> recorded
