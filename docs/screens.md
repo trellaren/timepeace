@@ -5,9 +5,10 @@
 | Screen | Roles | Status | Purpose |
 |---|---|---|---|
 | Login | all | ✅ MVP | |
-| Dashboard | all (adapts) | ✅ MVP | Approval queue counts; project health (finance roles); payroll readiness (HR); own week (worker) |
+| Dashboard | all (adapts) | ✅ MVP | **Open questions** from the crew, oldest first, each opening its task (managers); approval queue counts; project health (finance roles); payroll readiness (HR); own week (worker) |
 | Projects | managers, finance | ✅ MVP | Cards with progress and blocked count; **New project** from a template |
-| Project → Tasks & assignments | managers (edit), finance (read) | ✅ MVP | Tasks by phase, status, assignees, add task or phase, material requests inline |
+| Project → Tasks & assignments | managers (edit), finance (read) | ✅ MVP | Tasks by phase, status, assignees, add task or phase, material requests inline; **? open questions** and **💬 unread** badges per task |
+| Task panel (`/projects/[id]?task=…`) | managers, owners (accountants: details only) | ✅ | Task details plus the **discussion**: messages, status changes and material requests in one timeline; questions show Open / Answered; reply (answers open questions), ask, add up to 6 photos (button, drag-and-drop, paste; resized in the browser); full-size photo viewer; edit for 15 minutes; delete messages or photos; mark answered / reopen |
 | Project → Budget & job cost | finance roles | ✅ MVP | KPI tiles (revenue, cost to date, EAC, projected profit and margin, % complete, cash position); budget vs actual by cost code with alerts; edit budget lines |
 | Approvals → Timesheets | managers | ✅ MVP | Per-worker cards: paid hours (from clock in/out), OT/DT, on-task vs not-on-task time, daily breakdown; each shift with breaks, task allocations and GPS flag; **confirm/fix auto-closed shifts** and edit shift times (audited); approve, send back, approve all |
 | Approvals → Expenses | managers | ✅ MVP | Approve or reject with a note |

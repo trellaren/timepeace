@@ -15,6 +15,7 @@ export default function Dashboard() {
     <>
       <PageHeader title={`Good day, ${session.user.name.split(" ")[0]}`} subtitle={session.org.name} />
       <div className="grid gap-6">
+        {can.manage(role) && <OpenQuestions />}
         {can.manage(role) && <ManagerQueues />}
         {can.finance(role) && <ProjectHealth />}
         {can.payroll(role) && <PayrollStatus />}
@@ -42,6 +43,49 @@ function ManagerQueues() {
       ))}
     </div>
   );
+}
+
+/** The crew's unanswered questions, oldest first: the office's queue. */
+function OpenQuestions() {
+  const trpc = useTRPC();
+  const { data, isLoading } = useQuery({ ...trpc.discussion.openQuestions.queryOptions(), refetchInterval: 60_000 });
+  return (
+    <Card title={`Open questions${data?.length ? ` (${data.length})` : ""}`}>
+      {isLoading || !data ? (
+        <Loading />
+      ) : data.length === 0 ? (
+        <p className="text-sm text-muted">No open questions from the crew.</p>
+      ) : (
+        <ul className="divide-y divide-line-soft">
+          {data.map((q) => (
+            <li key={q.id}>
+              <Link href={`/projects/${q.project.id}?task=${encodeURIComponent(q.task.id)}`} className="flex gap-3 py-2.5 hover:bg-surface-2">
+                <span aria-hidden className="mt-0.5 font-bold text-warning-ink">?</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm text-ink">{q.body || "(photo)"}</span>
+                  <span className="block text-xs text-muted">
+                    {q.author.name} · {q.task.title} · {q.project.name}
+                    {q.photos > 0 && ` · ${q.photos} photo${q.photos === 1 ? "" : "s"}`}
+                  </span>
+                </span>
+                <span className="text-xs whitespace-nowrap text-muted tabular" title={q.at.toLocaleString()}>
+                  {waited(q.at)}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+/** How long a question has waited: "12 min", "3 h", "2 d". */
+function waited(at: Date) {
+  const min = Math.max(0, Math.round((Date.now() - at.getTime()) / 60_000));
+  if (min < 60) return `${min} min`;
+  if (min < 48 * 60) return `${Math.round(min / 60)} h`;
+  return `${Math.round(min / 1440)} d`;
 }
 
 function ProjectHealth() {
