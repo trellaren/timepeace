@@ -124,6 +124,7 @@ async function reset() {
     prisma.invoice.deleteMany(),
     prisma.dailyLog.deleteMany(),
     prisma.mileageLog.deleteMany(),
+    prisma.estimatedTaxPayment.deleteMany(),
     prisma.project.deleteMany(),
     prisma.client.deleteMany(),
     prisma.payRate.deleteMany(),
@@ -191,17 +192,24 @@ async function main() {
       isSubcontractor: true,
       is1099Eligible: true,
       w9OnFile: true,
+      w9ReceivedOn: dbDate("2026-01-12"),
+      taxClassification: "INDIVIDUAL",
       tinLast4: "4417",
+      email: "rosa@delgadoelectric.example",
+      address: "41 Pine St, Lafayette, CO 80026",
     },
   });
   const vendors = await Promise.all(
     [
-      { name: "Home Depot", isSubcontractor: false },
-      { name: "Front Range Lumber", isSubcontractor: false },
-      { name: "Summit Concrete Supply", isSubcontractor: false },
+      // Goods / rental vendors: no 1099s.
+      { name: "Home Depot", isSubcontractor: false, taxClassification: "C_CORP" as const },
+      { name: "Front Range Lumber", isSubcontractor: false, taxClassification: "S_CORP" as const },
+      { name: "United Rentals", isSubcontractor: false, taxClassification: "C_CORP" as const },
+      // Service vendors (1099-NEC candidates).
+      { name: "Summit Concrete Supply", isSubcontractor: true, is1099Eligible: true, w9OnFile: true, taxClassification: "S_CORP" as const, tinLast4: "0912" },
       { name: "Peak Plumbing Co", isSubcontractor: true, is1099Eligible: true, w9OnFile: false },
-      { name: "Front Range Excavating", isSubcontractor: true, is1099Eligible: true, w9OnFile: true },
-      { name: "United Rentals", isSubcontractor: false },
+      { name: "Front Range Excavating", isSubcontractor: true, is1099Eligible: true, w9OnFile: true, w9ReceivedOn: dbDate("2026-08-20"), taxClassification: "INDIVIDUAL" as const, tinLast4: "8821", address: "9 County Rd 5, Erie, CO 80516" },
+      { name: "Bolder Signs", isSubcontractor: false, is1099Eligible: true, w9OnFile: true, taxClassification: "INDIVIDUAL" as const, tinLast4: "3307" },
     ].map((v) => prisma.vendor.create({ data: { orgId: org.id, ...v } })),
   );
   const vendorByName = Object.fromEntries([...vendors, electricVendor].map((v) => [v.name, v]));
@@ -271,7 +279,7 @@ async function main() {
     data: [
       // Verify each year: 1099-NEC threshold rose from $600 to $2,000 for payments made in 2026+.
       { orgId: org.id, year: 2025, form1099ThresholdCents: 60000, mileageRateMilliCents: 7000 },
-      { orgId: org.id, year: 2026, form1099ThresholdCents: 200000, mileageRateMilliCents: 7250 },
+      { orgId: org.id, year: 2026, form1099ThresholdCents: 200000, mileageRateMilliCents: 7250, estimatedTaxRateBps: 2500, priorYearTaxCents: 28_500_00, priorYearAgiOver150k: true },
     ],
   });
 
@@ -441,6 +449,14 @@ async function main() {
     },
   });
   await prisma.payment.create({ data: { invoiceId: inv.id, amountCents: 97_000_00, receivedOn: dbDate(addDays(today, -33)) } });
+  const inv2 = await prisma.invoice.create({
+    data: { projectId: maple.project.id, number: "MR14-02", description: "Draw 2: framing complete", amountCents: 120_000_00, issuedOn: dbDate(addDays(today, -20)), status: "PAID" },
+  });
+  await prisma.payment.create({ data: { invoiceId: inv2.id, amountCents: 120_000_00, receivedOn: dbDate(addDays(today, -10)) } });
+  const inv3 = await prisma.invoice.create({
+    data: { projectId: ortiz.project.id, number: "OK-01", description: "Cost-plus billing #1", amountCents: 22_000_00, issuedOn: dbDate(addDays(today, -12)), status: "PAID" },
+  });
+  await prisma.payment.create({ data: { invoiceId: inv3.id, amountCents: 22_000_00, receivedOn: dbDate(addDays(today, -6)) } });
 
   // A task waiting on materials, with a request.
   const framingInterior = maple.tasks.find((t) => t.title === "Frame interior walls")!;
@@ -616,7 +632,7 @@ async function main() {
   // ── Expenses ──
   const exp = async (e: {
     user: string;
-    projectId: string;
+    projectId: string | null;
     taskId?: string;
     vendor: string;
     amount: number;
@@ -624,6 +640,7 @@ async function main() {
     category: CostCategory;
     taxCategory: string;
     paidBy: "COMPANY" | "PERSONAL";
+    method?: "CHECK" | "ACH" | "CASH" | "CARD";
     daysAgo: number;
     note?: string;
     costCode?: string;
@@ -644,6 +661,7 @@ async function main() {
         category: e.category,
         taxCategory: e.taxCategory,
         paidBy: e.paidBy,
+        paymentMethod: e.method ?? null,
         spentOn: dbDate(addDays(today, -e.daysAgo)),
         note: e.note,
         status: e.status ?? (e.daysAgo > 7 ? "APPROVED" : "SUBMITTED"),
@@ -653,20 +671,53 @@ async function main() {
     });
   const mp = maple.project.id;
   const op = ortiz.project.id;
-  await exp({ user: "manager@acme.test", projectId: mp, vendor: "Summit Concrete Supply", amount: 21_480_00, category: "MATERIAL", taxCategory: "job_materials", paidBy: "COMPANY", daysAgo: 60, costCode: "03" });
-  await exp({ user: "manager@acme.test", projectId: mp, vendor: "Front Range Lumber", amount: 24_115_40, category: "MATERIAL", taxCategory: "job_materials", paidBy: "COMPANY", daysAgo: 30, costCode: "06" });
-  await exp({ user: "manager@acme.test", projectId: mp, vendor: "Front Range Lumber", amount: 9_870_00, category: "MATERIAL", taxCategory: "job_materials", paidBy: "COMPANY", daysAgo: 12, costCode: "06" });
+  await exp({ user: "manager@acme.test", projectId: mp, vendor: "Summit Concrete Supply", amount: 21_480_00, category: "MATERIAL", taxCategory: "job_materials", paidBy: "COMPANY", method: "CHECK", daysAgo: 60, costCode: "03" });
+  await exp({ user: "manager@acme.test", projectId: mp, vendor: "Front Range Lumber", amount: 24_115_40, category: "MATERIAL", taxCategory: "job_materials", paidBy: "COMPANY", method: "ACH", daysAgo: 30, costCode: "06" });
+  await exp({ user: "manager@acme.test", projectId: mp, vendor: "Front Range Lumber", amount: 9_870_00, category: "MATERIAL", taxCategory: "job_materials", paidBy: "COMPANY", method: "ACH", daysAgo: 12, costCode: "06" });
   // Earlier phases (before the time-tracking history in this seed) were done by subs.
-  await exp({ user: "manager@acme.test", projectId: mp, vendor: "Front Range Excavating", amount: 14_800_00, tax: 0, category: "SUB", taxCategory: "job_subcontractors", paidBy: "COMPANY", daysAgo: 70, costCode: "02", note: "Excavation, backfill, grading (fixed bid)" });
-  await exp({ user: "manager@acme.test", projectId: mp, vendor: "Summit Concrete Supply", amount: 31_650_00, tax: 0, category: "SUB", taxCategory: "job_subcontractors", paidBy: "COMPANY", daysAgo: 58, costCode: "03", note: "Footings & foundation walls: labor + pump" });
-  await exp({ user: "manager@acme.test", projectId: mp, vendor: "Front Range Lumber", amount: 13_420_00, category: "MATERIAL", taxCategory: "job_materials", paidBy: "COMPANY", daysAgo: 21, costCode: "06", note: "Roof trusses" });
-  await exp({ user: "manager@acme.test", projectId: mp, vendor: "United Rentals", amount: 2_340_00, category: "EQUIPMENT", taxCategory: "equipment_rental", paidBy: "COMPANY", daysAgo: 55, costCode: "02", note: "Mini excavator, 1 week" });
-  await exp({ user: "manager@acme.test", projectId: mp, vendor: "Peak Plumbing Co", amount: 4_500_00, tax: 0, category: "SUB", taxCategory: "job_subcontractors", paidBy: "COMPANY", daysAgo: 9, costCode: "15", note: "Underslab rough" });
+  await exp({ user: "manager@acme.test", projectId: mp, vendor: "Front Range Excavating", amount: 14_800_00, tax: 0, category: "SUB", taxCategory: "job_subcontractors", paidBy: "COMPANY", method: "CHECK", daysAgo: 70, costCode: "02", note: "Excavation, backfill, grading (fixed bid)" });
+  await exp({ user: "manager@acme.test", projectId: mp, vendor: "Summit Concrete Supply", amount: 31_650_00, tax: 0, category: "SUB", taxCategory: "job_subcontractors", paidBy: "COMPANY", method: "CHECK", daysAgo: 58, costCode: "03", note: "Footings & foundation walls: labor + pump" });
+  await exp({ user: "manager@acme.test", projectId: mp, vendor: "Front Range Lumber", amount: 13_420_00, category: "MATERIAL", taxCategory: "job_materials", paidBy: "COMPANY", method: "ACH", daysAgo: 21, costCode: "06", note: "Roof trusses" });
+  await exp({ user: "manager@acme.test", projectId: mp, vendor: "United Rentals", amount: 2_340_00, category: "EQUIPMENT", taxCategory: "equipment_rental", paidBy: "COMPANY", method: "CARD", daysAgo: 55, costCode: "02", note: "Mini excavator, 1 week" });
+  await exp({ user: "manager@acme.test", projectId: mp, vendor: "Peak Plumbing Co", amount: 4_500_00, tax: 0, category: "SUB", taxCategory: "job_subcontractors", paidBy: "COMPANY", method: "CHECK", daysAgo: 9, costCode: "15", note: "Underslab rough" });
   await exp({ user: "jake@acme.test", projectId: mp, taskId: openMaple[0]?.id, vendor: "Home Depot", amount: 34_97, category: "OTHER", taxCategory: "small_tools", paidBy: "PERSONAL", daysAgo: 8, note: "Drill bit set (broke two)", costCode: "06" });
   await exp({ user: "luis@acme.test", projectId: mp, taskId: framingInterior.id, vendor: "Home Depot", amount: 187_42, category: "MATERIAL", taxCategory: "job_materials", paidBy: "PERSONAL", daysAgo: 2, note: "Framing nails + construction adhesive", costCode: "06" });
-  await exp({ user: "dana@acme.test", projectId: op, vendor: "Home Depot", amount: 412_18, category: "MATERIAL", taxCategory: "job_materials", paidBy: "COMPANY", daysAgo: 15, costCode: "01", note: "Floor protection, plastic, tape" });
+  await exp({ user: "dana@acme.test", projectId: op, vendor: "Home Depot", amount: 412_18, category: "MATERIAL", taxCategory: "job_materials", paidBy: "COMPANY", method: "CARD", daysAgo: 15, costCode: "01", note: "Floor protection, plastic, tape" });
   await exp({ user: "dana@acme.test", projectId: op, vendor: "Home Depot", amount: 58_20, category: "OTHER", taxCategory: "small_tools", paidBy: "PERSONAL", daysAgo: 3, note: "Oscillating tool blades", costCode: "01" });
-  await exp({ user: "manager@acme.test", projectId: op, vendor: "Delgado Electric LLC", amount: 3_150_00, tax: 0, category: "SUB", taxCategory: "job_subcontractors", paidBy: "COMPANY", daysAgo: 5, costCode: "16", note: "Panel upgrade (fixed bid, separate from hourly work)" });
+  await exp({ user: "manager@acme.test", projectId: op, vendor: "Delgado Electric LLC", amount: 3_150_00, tax: 0, category: "SUB", taxCategory: "job_subcontractors", paidBy: "COMPANY", method: "ACH", daysAgo: 5, costCode: "16", note: "Panel upgrade (fixed bid, separate from hourly work)" });
+
+  // Company overhead and other tax-relevant spending (no job).
+  const owner = "owner@acme.test";
+  await exp({ user: owner, projectId: null, vendor: "Peak Plumbing Co", amount: 1_200_00, tax: 0, category: "SUB", taxCategory: "job_subcontractors", paidBy: "COMPANY", method: "CARD", daysAgo: 120, note: "Warranty call (paid by card: excluded from 1099)", status: "APPROVED" });
+  await exp({ user: owner, projectId: null, vendor: "Delgado Electric LLC", amount: 1_850_00, tax: 0, category: "SUB", taxCategory: "job_subcontractors", paidBy: "COMPANY", method: "CHECK", daysAgo: 200, note: "Service upgrade, prior job", status: "APPROVED" });
+  await exp({ user: owner, projectId: null, vendor: "Pinnacle Insurance", amount: 3_240_00, tax: 0, category: "OTHER", taxCategory: "insurance", paidBy: "COMPANY", method: "ACH", daysAgo: 280, note: "General liability, annual", status: "APPROVED" });
+  await exp({ user: owner, projectId: mp, vendor: "Boulder County", amount: 1_450_00, tax: 0, category: "OTHER", taxCategory: "permits_licenses", paidBy: "COMPANY", method: "CHECK", daysAgo: 78, note: "Building permit", status: "APPROVED" });
+  await exp({ user: owner, projectId: null, vendor: "Verizon", amount: 240_00, tax: 0, category: "OTHER", taxCategory: "utilities", paidBy: "COMPANY", method: "CARD", daysAgo: 35, note: "Crew phones, monthly", status: "APPROVED" });
+  await exp({ user: owner, projectId: null, vendor: "Intuit", amount: 90_00, tax: 0, category: "OTHER", taxCategory: "office", paidBy: "COMPANY", method: "CARD", daysAgo: 40, note: "Accounting software", status: "APPROVED" });
+  await exp({ user: owner, projectId: null, vendor: "Bolder Signs", amount: 600_00, category: "OTHER", taxCategory: "advertising", paidBy: "COMPANY", method: "CHECK", daysAgo: 95, note: "Yard signs", status: "APPROVED" });
+  await exp({ user: "manager@acme.test", projectId: mp, vendor: "Moe's BBQ", amount: 186_40, category: "OTHER", taxCategory: "meals", paidBy: "COMPANY", method: "CARD", daysAgo: 17, note: "Crew lunch: framing inspection passed", status: "APPROVED" });
+  await exp({ user: owner, projectId: null, vendor: "Home Depot", amount: 1_899_00, category: "EQUIPMENT", taxCategory: "equipment_purchase", paidBy: "COMPANY", method: "CARD", daysAgo: 64, note: "SawStop jobsite table saw", status: "APPROVED" });
+  await exp({ user: "manager@acme.test", projectId: op, vendor: "Western Disposal", amount: 85_00, tax: 0, category: "OTHER", taxCategory: "other", paidBy: "COMPANY", method: "CARD", daysAgo: 11, note: "Dump fee", status: "APPROVED" });
+
+  // Mileage (standard rate), mostly supply runs and site visits.
+  const trips: [number, number, string, string | null][] = [
+    [3, 34.2, "Supply run: Front Range Lumber → Maple Ridge", mp],
+    [9, 18.6, "Site walk with client", mp],
+    [16, 41.0, "Permit office + Ortiz site", op],
+    [23, 27.5, "Pick up fixtures", op],
+    [31, 52.3, "Bid walkthrough: Cedar Lane", null],
+    [44, 22.1, "Inspection meeting", mp],
+    [58, 38.9, "Supply run", mp],
+    [73, 65.4, "Lot survey + county office", mp],
+  ];
+  for (const [ago, miles, purpose, projectId] of trips) {
+    await prisma.mileageLog.create({ data: { orgId: org.id, userId: users["manager@acme.test"]!.id, projectId, date: dbDate(addDays(today, -ago)), miles, purpose } });
+  }
+
+  // Estimated tax payments made this year.
+  for (const [quarter, paidOn] of [[1, "2026-04-14"], [2, "2026-06-12"], [3, "2026-09-14"]] as const) {
+    await prisma.estimatedTaxPayment.create({ data: { orgId: org.id, year: 2026, quarter, amountCents: 7_800_00, paidOn: dbDate(paidOn) } });
+  }
 
   console.log(`Seeded "${org.name}" (${today}). Log in with any of:`);
   for (const e of [...staff.map((s) => s.email), ...workers.map((w) => w.email)]) console.log(`  ${e} / ${PASSWORD}`);

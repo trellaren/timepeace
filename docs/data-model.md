@@ -59,6 +59,9 @@ erDiagram
   WalkthroughItemResult ||--o| Task : "punch item"
 
   Organization ||--o{ TaxYearSettings : "per year"
+  Organization ||--o{ EstimatedTaxPayment : "quarterly"
+  User ||--o{ MileageLog : drives
+  Project ||--o{ MileageLog : "trip for"
   Organization ||--o{ AuditLog : records
 ```
 
@@ -76,7 +79,10 @@ erDiagram
 | `ShiftBreak` | A recorded meal break. Deducted only if at least the org minimum (default 20 min). Shorter breaks stay paid. |
 | `TimeEntry` | **Task allocation inside a shift**, for job costing only; it doesn't determine pay. Start/end instants, source `TIMER`/`MANUAL`, start/end GPS. An open entry (`endedAt = null`) is a running task timer. |
 | `Timesheet` | User × pay period. Status `DRAFT → SUBMITTED → APPROVED/REJECTED → EXPORTED → PAID`. Approval freezes regular/OT/DT minutes and estimated gross (all from shifts), plus `allocatedMinutes` (how much was on tasks). |
-| `Expense` | `amountCents` is the receipt total; `salesTaxCents` is the tax portion (informational, for tax prep). `paidBy = PERSONAL` means reimbursable. `taxCategory` maps to `TAX_CATEGORIES`. |
-| `Vendor` | Subcontractor and 1099 flags, W-9 on file, TIN encrypted with AES-256-GCM (`apps/api/src/lib/crypto.ts`). Only the last 4 digits are ever shown. |
+| `Expense` | `amountCents` is the receipt total; `salesTaxCents` is the tax portion (informational, for tax prep). `paidBy = PERSONAL` means reimbursable. `taxCategory` maps to `TAX_CATEGORIES`. `paymentMethod` (card, check, ACH, cash, payment app) decides 1099 treatment. `projectId` is optional: company overhead has none. |
+| `Vendor` | Subcontractor and 1099 flags, W-9 on file and received date, `taxClassification` (W-9 line 3: individual, partnership, C/S corp, LLC as C/S/P, trust, other), `isAttorney` (attorneys get 1099s even as corporations). TIN encrypted with AES-256-GCM (`apps/api/src/lib/crypto.ts`) with `tinLast4` kept for display. Only the last 4 digits are ever shown. |
+| `MileageLog` | Org, driver, optional project, date, miles, business purpose, from/to. |
+| `TaxYearSettings` | Per org × year: 1099 threshold, IRS mileage rate (milli-cents), effective tax rate for estimates, prior-year total tax and whether prior AGI exceeded $150k (safe harbor 110%). |
+| `EstimatedTaxPayment` | Org × year × quarter, amount and date paid. |
 | `ProcessedOp` | Dedupe ledger for offline ops. |
 | `AuditLog` | Before/after and reason for contract value changes, budget lines, timesheet reviews, time-entry edits, expense reviews and payroll exports. |

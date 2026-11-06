@@ -243,6 +243,6 @@ describe("projects & finance", () => {
     expect(jc.byCategory.LABOR.actualCents).toBeGreaterThan(0);
     expect(jc.byCategory.MATERIAL.actualCents).toBeGreaterThan(0);
     expect(jc.totalActualCents).toBe(Object.values(jc.byCategory).reduce((a, c) => a + c.actualCents, 0));
-    expect(jc.receivedCents).toBe(97_000_00);
+    expect(jc.receivedCents).toBe(97_000_00 + 120_000_00); // draws 1 and 2
   });
 });

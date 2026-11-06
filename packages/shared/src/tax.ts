@@ -12,6 +12,10 @@ export interface TaxCategory {
   form1120S: string;
   /** Job costs that belong in cost of goods sold rather than general deductions. */
   costOfGoodsSold: boolean;
+  /** Share deductible, in bps, when limited (business meals: generally 50%). */
+  deductibleBps?: number;
+  /** Capital purchase: depreciated or expensed under §179 / bonus depreciation, a CPA decision. Not in current deductions. */
+  capitalize?: boolean;
 }
 
 export const TAX_CATEGORIES: readonly TaxCategory[] = [
@@ -20,7 +24,7 @@ export const TAX_CATEGORIES: readonly TaxCategory[] = [
   { id: "job_labor", label: "Direct labor (job)", scheduleC: "Part III, line 37", form1120S: "1125-A line 3", costOfGoodsSold: true },
   { id: "equipment_rental", label: "Equipment rental", scheduleC: "Line 20a", form1120S: "Line 11", costOfGoodsSold: false },
   { id: "small_tools", label: "Small tools & consumables (drill bits, blades)", scheduleC: "Line 22", form1120S: "Line 19 (other deductions)", costOfGoodsSold: false },
-  { id: "equipment_purchase", label: "Equipment purchase (depreciable / §179)", scheduleC: "Line 13 (Form 4562)", form1120S: "Line 14 (Form 4562)", costOfGoodsSold: false },
+  { id: "equipment_purchase", label: "Equipment purchase (depreciable / §179)", scheduleC: "Line 13 (Form 4562)", form1120S: "Line 14 (Form 4562)", costOfGoodsSold: false, capitalize: true },
   { id: "vehicle", label: "Vehicle expenses / mileage", scheduleC: "Line 9", form1120S: "Line 19 (other deductions)", costOfGoodsSold: false },
   { id: "fuel", label: "Fuel", scheduleC: "Line 9", form1120S: "Line 19 (other deductions)", costOfGoodsSold: false },
   { id: "insurance", label: "Insurance (GL, builder's risk)", scheduleC: "Line 15", form1120S: "Line 19 (other deductions)", costOfGoodsSold: false },
@@ -29,7 +33,7 @@ export const TAX_CATEGORIES: readonly TaxCategory[] = [
   { id: "office", label: "Office expense & software", scheduleC: "Line 18", form1120S: "Line 19 (other deductions)", costOfGoodsSold: false },
   { id: "repairs", label: "Repairs & maintenance (non-job)", scheduleC: "Line 21", form1120S: "Line 9", costOfGoodsSold: false },
   { id: "advertising", label: "Advertising", scheduleC: "Line 8", form1120S: "Line 16", costOfGoodsSold: false },
-  { id: "meals", label: "Business meals (generally 50%)", scheduleC: "Line 24b", form1120S: "Line 19 (other deductions)", costOfGoodsSold: false },
+  { id: "meals", label: "Business meals (generally 50%)", scheduleC: "Line 24b", form1120S: "Line 19 (other deductions)", costOfGoodsSold: false, deductibleBps: 5000 },
   { id: "travel", label: "Travel", scheduleC: "Line 24a", form1120S: "Line 19 (other deductions)", costOfGoodsSold: false },
   { id: "utilities", label: "Utilities & phones", scheduleC: "Line 25", form1120S: "Line 19 (other deductions)", costOfGoodsSold: false },
   { id: "other", label: "Other", scheduleC: "Line 27a", form1120S: "Line 19 (other deductions)", costOfGoodsSold: false },
@@ -53,4 +57,19 @@ export function defaultTaxCategoryFor(costCategory: string): string {
     default:
       return "other";
   }
+}
+
+/** Which return's line references apply to an entity type. */
+export function taxFormFor(entityType: string): "scheduleC" | "form1120S" | "other" {
+  if (entityType === "SOLE_PROP" || entityType === "LLC_SINGLE") return "scheduleC";
+  if (entityType === "S_CORP") return "form1120S";
+  return "other"; // partnerships (1065) and C corps (1120): line mapping not yet provided; totals still useful
+}
+
+/** The currently deductible part of an expense (meals limited; capital purchases excluded). */
+export function deductibleCents(taxCategoryId: string, amountCents: number): number {
+  const c = taxCategoryById(taxCategoryId);
+  if (c?.capitalize) return 0;
+  if (c?.deductibleBps != null) return Math.round((amountCents * c.deductibleBps) / 10_000);
+  return amountCents;
 }

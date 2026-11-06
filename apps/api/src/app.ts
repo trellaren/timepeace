@@ -9,6 +9,7 @@ import { env } from "./env";
 import { db } from "./lib/db";
 import { storage } from "./lib/storage";
 import { appRouter, type AppRouter } from "./router";
+import { buildCpaPackage } from "./services/cpaPackage";
 import { payrollCsv, payrollPdf, payrollRows } from "./services/payroll";
 import { PAYROLL_ROLES } from "./trpc";
 
@@ -91,6 +92,14 @@ export async function buildApp() {
       .type("text/csv; charset=utf-8")
       .header("Content-Disposition", `attachment; filename="${base}.csv"`)
       .send(payrollCsv(period, rows));
+  });
+
+  app.get<{ Params: { year: string } }>("/tax/:year/cpa-package.zip", async (req, reply) => {
+    const auth = await requireAuth(req, ["OWNER", "ACCOUNTANT"]);
+    const year = Number(req.params.year);
+    if (!Number.isInteger(year) || year < 2000 || year > 2100) return reply.code(400).send({ error: "Invalid year" });
+    const pkg = await buildCpaPackage(db(), auth.orgId, year);
+    return reply.type("application/zip").header("Content-Disposition", `attachment; filename="${pkg.filename}"`).send(Buffer.from(pkg.data));
   });
 
   return app;

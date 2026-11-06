@@ -63,27 +63,86 @@ The **generic CSV** columns are `employee_name, email, classification, period_st
 
 Provider-specific CSV layouts (Gusto, ADP, QuickBooks Payroll) are enum values in the schema. Their column mappings come next, once checked against each provider's current import template. Direct API integrations come later (Phase 5).
 
-## Tax prep (Phase 4; categories in place now)
+## Tax center
 
-Every expense carries a `taxCategory` (default derived from its cost category). `TAX_CATEGORIES` in `packages/shared/src/tax.ts` maps each one to:
+**Who:** OWNER and ACCOUNTANT only (`roleProcedure(["OWNER","ACCOUNTANT"])` on the `tax` router and the zip route). Managers, HR and workers get 403.
+
+**What it is:** a record organizer for the CPA. It is **not tax advice and files nothing.** Code: `packages/shared/src/taxPrep.ts` (pure rules, unit-tested), `apps/api/src/services/tax.ts`, `apps/api/src/services/cpaPackage.ts`, `apps/web/src/app/(app)/tax/page.tsx`.
+
+### Tax lines
+
+Every expense carries a `taxCategory` (defaulted from its cost category, editable on the Deductions tab). `TAX_CATEGORIES` in `packages/shared/src/tax.ts` maps each one to:
 - **Schedule C** lines (sole prop / single-member LLC), with job materials, labor and subcontractors in **Part III cost of goods sold**
 - **Form 1120-S** lines and **Form 1125-A** COGS lines (S corp)
+- Other entity types get category totals with no line mapping (and a flag saying so).
 
-Planned features of the tax center:
+Summary math is **cash basis** for the calendar year:
 
-| Feature | Details |
+```
+revenue      = customer payments received in the year (invoiced shown for reference)
+COGS         = Σ deductible(expense) on COGS lines + W-2 gross from approved timesheets (direct labor)
+               + 1099 workers' approved pay (subcontractors)
+deductions   = Σ deductible(expense) on non-COGS, non-capitalized lines + mileage × IRS rate (vehicle line)
+net profit   = revenue − COGS − deductions          (estimate; depreciation is left to the CPA)
+deductible   = amount × deductibleBps            (meals 50%, everything else 100%)
+```
+
+- `equipment_purchase` is **capitalized**: listed under capital purchases for depreciation / §179 (Form 4562), not deducted.
+- Overhead (company-level) expenses have no project (`Expense.projectId = null`) and are entered on the Deductions tab.
+- **Flags:** expenses left in "Other", expenses ≥ $75 without a receipt, approved timesheets not yet marked paid (wages are estimates), mileage *and* fuel both recorded (standard rate vs actual costs), company vendor payments with no payment method.
+
+### 1099-NEC tracker (`evaluate1099`)
+
+For each vendor with payments in the year, or marked 1099-eligible:
+
+1. Payments by **card or payment app** (`CARD`, `PAYMENT_APP`) are excluded: the processor reports them on 1099-K.
+2. Approved timesheet pay of a 1099 worker linked to a vendor (`WorkerProfile.vendorId`) counts toward that vendor, with a note to check whether the payroll provider already files it.
+3. Status:
+   - `NOT_SERVICE_VENDOR`: not 1099-eligible (goods suppliers)
+   - `EXEMPT_CORPORATION`: W-9 classification is C/S corp or LLC taxed as one, **unless** `isAttorney`
+   - `BELOW_THRESHOLD`: reportable total < the year's threshold
+   - `FILE`: needs a 1099-NEC (due to recipient and IRS by January 31)
+4. Issues: missing W-9, missing TIN, unknown classification (treated as reportable), payments with no recorded method (counted as reportable).
+
+Threshold: **$600 for payments through 2025; $2,000 for payments made in 2026 and later** (stored per year in `TaxYearSettings.form1099ThresholdCents`; verify annually).
+
+### Estimated-tax worksheet (`estimatedTaxWorksheet`)
+
+```
+yearFraction        = days elapsed / days in year (as of today, or Dec 31 for past years)
+projected profit    = YTD net profit ÷ yearFraction
+projected tax       = projected profit × effective rate (set with the CPA; default 25%)
+current90           = 90% × projected tax
+priorYearSafeHarbor = prior-year total tax × (110% if prior AGI > $150k else 100%)
+required            = min(current90, priorYearSafeHarbor)   (current90 alone if prior year unknown)
+installment         = required ÷ 4, due Apr 15 / Jun 15 / Sep 15 / Jan 15 (next year)
+```
+
+Each quarter compares cumulative paid vs cumulative required: `PAID` (covered), `SHORT` (past due and behind), `DUE_SOON` (within 30 days), `UPCOMING`. For S corps and partnerships the page notes that owners usually pay estimates personally, so it's a planning worksheet. Seasonal income may qualify for the annualized-income method (Form 2210), which isn't modeled.
+
+### Mileage
+
+`MileageLog` rows (date, driver, miles, business purpose, optional job and from/to) × the year's IRS standard rate (`TaxYearSettings.mileageRateMilliCents`; demo seed uses 70¢ for 2025 and 72.5¢ for 2026; verify).
+
+### Year-end CPA package
+
+`GET /tax/:year/cpa-package.zip` (bearer auth, OWNER/ACCOUNTANT) builds a ZIP with fflate:
+
+| File | Contents |
 |---|---|
-| Expense totals by tax line | For the org's entity type, with drill-down to receipts |
-| 1099-NEC tracker | YTD payments per 1099-eligible vendor/contractor against the year's threshold. **$600 for payments through 2025; $2,000 for payments made in 2026 and later** (verify annually). Shows W-9 status; exports CSV for an e-file service. |
-| W-2 reconciliation | Approved hours and gross estimates per employee, to tie out against the payroll provider's W-2s |
-| Mileage | `MileageLog` at the IRS standard rate for the year (demo seed uses 70¢ for 2025, 72.5¢ for 2026; verify) |
-| Equipment | Purchases flagged for depreciation / §179 (Form 4562) |
-| Sales tax | Tax paid on materials, from `salesTaxCents` |
-| Quarterly estimates | Worksheet from YTD profit (actual method vs prior-year safe harbor) |
-| Year-end CPA package (ZIP) | P&L, expenses by tax line, job-cost summary, 1099 list, payroll summary, receipt images |
+| `profit_and_loss.csv` | Cash-basis revenue, COGS, deductions, net |
+| `deductions_by_tax_line.csv` | Category, form line, amount, deductible, count |
+| `expenses_detail.csv` | Every expense with tax category, payment method, project, receipt filename |
+| `receipts/` | Receipt images, named to match `expenses_detail.csv` |
+| `form_1099_nec.csv` | Vendor, status, Box 1, card-excluded, classification, W-9, TIN **last 4 only**, address, issues |
+| `payroll_summary.csv` | Approved timesheets per worker: hours and gross estimate |
+| `job_cost_summary.csv` | Per project: revenue, cost to date, estimate at completion, projected profit, cash received |
+| `mileage_log.csv` | Trip log with deduction |
+| `estimated_tax_payments.csv` | Payments by quarter |
+| `README.txt` | Basis, assumptions and caveats |
 
 ## Sensitive data
 
-- Vendor TINs are encrypted with AES-256-GCM using `FIELD_ENCRYPTION_KEY` (required in production). Only the last 4 digits are displayed.
+- Vendor TINs are encrypted with AES-256-GCM using `FIELD_ENCRYPTION_KEY` (required in production). Only the last 4 digits are displayed or exported, and the audit log records only that a TIN was updated, never its value.
 - Pay rates are visible only to OWNER and HR. Workers see only their own hours and expenses.
 - Every change to time or money is written to `AuditLog` with the actor and a reason.

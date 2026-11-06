@@ -21,7 +21,7 @@ export default function Expenses() {
             <Text style={[s.body, s.tabular, { fontWeight: "600" }]}>{formatCents(e.amountCents)}</Text>
           </View>
           <Text style={s.muted}>
-            {e.spentOn.toISOString().slice(0, 10)} · {e.project.name}
+            {e.spentOn.toISOString().slice(0, 10)} · {e.project?.name ?? "Company"}
             {e.note ? ` · ${e.note}` : ""}
           </Text>
           <View style={s.row}>

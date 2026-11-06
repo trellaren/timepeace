@@ -24,6 +24,7 @@
     "@timepeace/api": "workspace:*",
     "@types/react": "~19.3.0",
     "@types/react-dom": "~19.3.0",
+    "fflate": "^0.8.3",
     "tailwindcss": "^4.1.0"
   }
 }

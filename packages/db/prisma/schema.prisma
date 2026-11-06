@@ -132,6 +132,27 @@ enum ChecklistResult {
   NA
 }
 
+/// W-9 line 3 federal tax classification.
+enum VendorTaxClass {
+  INDIVIDUAL
+  PARTNERSHIP
+  C_CORP
+  S_CORP
+  LLC_C
+  LLC_S
+  LLC_P
+  TRUST_ESTATE
+  OTHER
+}
+
+/// How a vendor was paid. CARD (credit/debit/third-party network) payments are reported on 1099-K by the processor, not on your 1099-NEC.
+enum PaymentMethod {
+  CHECK
+  ACH
+  CASH
+  CARD
+}
+
 enum PayrollExportFormat {
   GENERIC_CSV
   PDF
@@ -167,6 +188,8 @@ model Organization {
   payPeriods        PayPeriod[]
   checklistTemplates ChecklistTemplate[]
   taxYearSettings   TaxYearSettings[]
+  estimatedTaxPayments EstimatedTaxPayment[]
+  mileageLogs       MileageLog[]
   auditLogs         AuditLog[]
   files             FileObject[]
   payrollExports    PayrollExport[]
@@ -548,7 +571,8 @@ model Expense {
   id              String        @id @default(uuid())
   orgId           String
   userId          String
-  projectId       String
+  /// null = company overhead (insurance, office, phones…), not charged to a job.
+  projectId       String?
   taskId          String?
   costCodeId      String?
   vendorId        String?
@@ -559,6 +583,8 @@ model Expense {
   /// TAX_CATEGORIES id from packages/shared/src/tax.ts
   taxCategory     String        @default("job_materials")
   paidBy          PaidBy
+  /// Recorded for company payments to vendors (drives 1099-NEC). null = not recorded.
+  paymentMethod   PaymentMethod?
   status          ExpenseStatus @default(SUBMITTED)
   spentOn         DateTime      @db.Date
   note            String?
@@ -573,7 +599,7 @@ model Expense {
 
   user          User           @relation("ExpenseSubmitter", fields: [userId], references: [id])
   reviewedBy    User?          @relation("ExpenseReviewer", fields: [reviewedById], references: [id])
-  project       Project        @relation(fields: [projectId], references: [id])
+  project       Project?       @relation(fields: [projectId], references: [id])
   task          Task?          @relation(fields: [taskId], references: [id], onDelete: SetNull)
   costCode      CostCode?      @relation(fields: [costCodeId], references: [id])
   vendor        Vendor?        @relation(fields: [vendorId], references: [id])
@@ -601,15 +627,23 @@ model MaterialRequest {
   @@index([status])
 }
 
+/// Business miles in a personal or company vehicle (standard mileage rate method).
 model MileageLog {
-  id        String   @id @default(uuid())
+  id        String       @id @default(uuid())
+  orgId     String
   userId    String
   projectId String?
-  date      DateTime @db.Date
+  date      DateTime     @db.Date
   miles     Float
   purpose   String
-  user      User     @relation(fields: [userId], references: [id])
-  project   Project? @relation(fields: [projectId], references: [id])
+  fromPlace String?
+  toPlace   String?
+  createdAt DateTime     @default(now())
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id])
+  project   Project?     @relation(fields: [projectId], references: [id])
+
+  @@index([orgId, date])
 }
 
 model DailyLog {
@@ -758,6 +792,10 @@ model Vendor {
   isSubcontractor  Boolean      @default(false)
   is1099Eligible   Boolean      @default(false)
   w9OnFile         Boolean      @default(false)
+  /// W-9 line 3. Corporations are generally exempt from 1099-NEC (attorneys are not).
+  taxClassification VendorTaxClass?
+  isAttorney       Boolean      @default(false)
+  w9ReceivedOn     DateTime?    @db.Date
   /// AES-256-GCM ciphertext (see apps/api/src/lib/crypto.ts). Only last4 is ever shown.
   tinEncrypted     String?
   tinLast4         String?
@@ -778,10 +816,29 @@ model TaxYearSettings {
   form1099ThresholdCents Int
   /// IRS standard mileage rate in tenths of a cent per mile (e.g. 700 = 70.0¢).
   mileageRateMilliCents  Int
+  /// Combined effective rate (income + SE tax) agreed with the CPA, for the estimate worksheet.
   estimatedTaxRateBps    Int          @default(2500)
+  /// Prior-year total tax, for the safe-harbor method.
+  priorYearTaxCents      Int?
+  /// Prior-year AGI over $150k → safe harbor is 110% of prior-year tax.
+  priorYearAgiOver150k   Boolean      @default(false)
   org                    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   @@unique([orgId, year])
+}
+
+model EstimatedTaxPayment {
+  id          String       @id @default(cuid())
+  orgId       String
+  year        Int
+  quarter     Int
+  amountCents Int
+  paidOn      DateTime     @db.Date
+  note        String?
+  createdAt   DateTime     @default(now())
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, year])
 }
 
 // ───────────────────── Infrastructure ─────────────────────
