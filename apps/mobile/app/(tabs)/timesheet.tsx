@@ -4,10 +4,12 @@ import { formatMinutes, toLocalDate } from "@timepeace/shared";
 import { useState } from "react";
 import { Alert, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SyncBanner } from "@/components/SyncBanner";
-import { Button, Card, StatusPill, colors, s } from "@/components/ui";
+import { Button, Card, StatusPill, useColors, useStyles } from "@/components/ui";
 import { useField } from "@/lib/field";
 
 export default function Timesheet() {
+  const s = useStyles();
+  const colors = useColors();
   const trpc = useTRPC();
   const qc = useQueryClient();
   const { field, sync, syncNow, day: myDay } = useField();
@@ -27,7 +29,7 @@ export default function Timesheet() {
         <Text style={s.h2}>{d ? `${d.period.start.slice(5)} – ${d.period.end.slice(5)}` : "…"}</Text>
         <Button title="Next ›" variant="secondary" disabled={offset === 0} onPress={() => setOffset(Math.min(0, offset + 1))} />
       </View>
-      {q.error && <Text style={{ color: colors.critical }}>{errorMessage(q.error)}</Text>}
+      {q.error && <Text style={{ color: colors.criticalInk }}>{errorMessage(q.error)}</Text>}
       {d && (
         <>
           <Card>
@@ -40,7 +42,7 @@ export default function Timesheet() {
               Regular {formatMinutes(d.totals.regularMinutes)} · Overtime {formatMinutes(d.totals.overtimeMinutes)}
               {d.totals.doubleTimeMinutes ? ` · Double ${formatMinutes(d.totals.doubleTimeMinutes)}` : ""}
             </Text>
-            {d.timesheet?.status === "REJECTED" && d.timesheet.reviewNote && <Text style={{ color: colors.critical }}>Manager note: {d.timesheet.reviewNote}</Text>}
+            {d.timesheet?.status === "REJECTED" && d.timesheet.reviewNote && <Text style={{ color: colors.criticalInk }}>Manager note: {d.timesheet.reviewNote}</Text>}
             {canSubmit && (
               <Button
                 big
@@ -66,11 +68,11 @@ export default function Timesheet() {
               {d.shifts
                 .filter((sh) => toLocalDate(sh.clockInAt, tz) === day.date)
                 .map((sh) => (
-                  <View key={sh.id} style={{ gap: 2, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 6 }}>
+                  <View key={sh.id} style={{ gap: 2, borderTopWidth: 1, borderTopColor: colors.line, paddingTop: 6 }}>
                     <Text style={[s.body, s.tabular]}>
                       {fmtTime(sh.clockInAt)} – {sh.clockOutAt ? fmtTime(sh.clockOutAt) : "now"} · paid {formatMinutes(sh.paidMinutes)}
                     </Text>
-                    {sh.flag === "AUTO_CLOSED" && <Text style={{ color: colors.critical }}>No clock-out was recorded. Tell your manager what time you actually finished.</Text>}
+                    {sh.flag === "AUTO_CLOSED" && <Text style={{ color: colors.criticalInk }}>No clock-out was recorded. Tell your manager what time you actually finished.</Text>}
                     {sh.breaks.map((b) => (
                       <Text key={b.id} style={s.muted}>
                         Break {fmtTime(b.startedAt)} – {b.endedAt ? fmtTime(b.endedAt) : "now"}

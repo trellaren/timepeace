@@ -5,7 +5,7 @@ import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Alert, Image, Pressable, ScrollView, Text, View } from "react-native";
-import { Button, Card, Field, Segmented, colors, s } from "@/components/ui";
+import { Button, Card, Field, Segmented, useColors, useStyles } from "@/components/ui";
 import { useField } from "@/lib/field";
 import { kv } from "@/lib/db";
 import { useEffect } from "react";
@@ -13,6 +13,8 @@ import { useEffect } from "react";
 type Target = { id: string; name: string; tasks: { id: string; title: string }[] };
 
 export default function NewExpense() {
+  const s = useStyles();
+  const colors = useColors();
   const params = useLocalSearchParams<{ projectId?: string; taskId?: string }>();
   const trpc = useTRPC();
   const { addExpense, day } = useField();
@@ -102,7 +104,7 @@ export default function NewExpense() {
         <Text style={s.label}>Project</Text>
         {targets.length === 0 && <Text style={s.muted}>No assigned projects available offline yet.</Text>}
         {targets.map((p) => (
-          <Pressable key={p.id} onPress={() => { setProjectId(p.id); setTaskId(""); }} style={[s.input, project?.id === p.id && { borderColor: colors.brand, backgroundColor: colors.brandLight }]}>
+          <Pressable key={p.id} onPress={() => { setProjectId(p.id); setTaskId(""); }} style={[s.input, project?.id === p.id && { borderColor: colors.accent, backgroundColor: colors.accentSoft }]}>
             <Text style={s.body}>{p.name}</Text>
           </Pressable>
         ))}
@@ -111,8 +113,8 @@ export default function NewExpense() {
             <Text style={[s.label, { marginTop: 6 }]}>Task (optional)</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
               {project.tasks.map((t) => (
-                <Pressable key={t.id} onPress={() => setTaskId(taskId === t.id ? "" : t.id)} style={[s.pill, { borderWidth: 1, borderColor: taskId === t.id ? colors.brand : colors.border, backgroundColor: taskId === t.id ? colors.brandLight : "#fff", paddingVertical: 6, paddingHorizontal: 10 }]}>
-                  <Text style={{ color: colors.text }}>{t.title}</Text>
+                <Pressable key={t.id} onPress={() => setTaskId(taskId === t.id ? "" : t.id)} style={[s.pill, { borderWidth: 1, borderColor: taskId === t.id ? colors.accent : colors.line, backgroundColor: taskId === t.id ? colors.accentSoft : colors.surface, paddingVertical: 6, paddingHorizontal: 10 }]}>
+                  <Text style={{ color: colors.ink }}>{t.title}</Text>
                 </Pressable>
               ))}
             </View>

@@ -27,27 +27,27 @@ export default function ProjectsPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {data?.map((p) => (
-            <Link key={p.id} href={`/projects/${p.id}`} className="rounded-lg border border-stone-200 bg-white p-4 hover:border-brand-500">
+            <Link key={p.id} href={`/projects/${p.id}`} className="rounded-lg border border-line bg-surface p-4 hover:border-accent">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <div className="font-semibold text-stone-900">{p.name}</div>
-                  <div className="text-xs text-stone-500">
+                  <div className="font-semibold text-ink">{p.name}</div>
+                  <div className="text-xs text-muted">
                     {p.client?.name} · {p.projectType ?? "—"}
                   </div>
                 </div>
                 <StatusBadge status={p.status} />
               </div>
-              <div className="mt-3 flex items-center justify-between text-sm text-stone-600">
+              <div className="mt-3 flex items-center justify-between text-sm text-ink-2">
                 <span>
                   {p.taskCounts.done}/{p.taskCounts.total} tasks done
-                  {p.taskCounts.blocked > 0 && <span className="ml-2 text-amber-700">· {p.taskCounts.blocked} waiting</span>}
+                  {p.taskCounts.blocked > 0 && <span className="ml-2 text-warning-ink">· {p.taskCounts.blocked} waiting</span>}
                 </span>
                 <span>
-                  <Money cents={p.contractValueCents} /> <span className="text-xs text-stone-400">{p.contractType.replace(/_/g, " ").toLowerCase()}</span>
+                  <Money cents={p.contractValueCents} /> <span className="text-xs text-faint">{p.contractType.replace(/_/g, " ").toLowerCase()}</span>
                 </span>
               </div>
-              <div className="mt-2 h-1.5 rounded-full bg-stone-100">
-                <div className="h-1.5 rounded-full bg-brand-500" style={{ width: `${p.taskCounts.total ? (p.taskCounts.done / p.taskCounts.total) * 100 : 0}%` }} />
+              <div className="mt-2 h-1.5 rounded-full bg-surface-3">
+                <div className="h-1.5 rounded-full bg-accent" style={{ width: `${p.taskCounts.total ? (p.taskCounts.done / p.taskCounts.total) * 100 : 0}%` }} />
               </div>
             </Link>
           ))}

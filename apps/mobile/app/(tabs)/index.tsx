@@ -4,11 +4,14 @@ import { useMemo, useState } from "react";
 import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { Elapsed } from "@/components/Elapsed";
 import { SyncBanner } from "@/components/SyncBanner";
-import { Button, Card, StatusPill, colors, s } from "@/components/ui";
+import { ThemePicker } from "@/components/ThemePicker";
+import { Button, Card, StatusPill, useColors, useStyles } from "@/components/ui";
 import { useField, type DayTask } from "@/lib/field";
 import { useSession } from "@/lib/session";
 
 export default function Today() {
+  const s = useStyles();
+  const colors = useColors();
   const { day, dayLoading, timer, start, stop, refresh, sync } = useField();
   const { session, signOut } = useSession();
   const [refreshing, setRefreshing] = useState(false);
@@ -71,13 +74,13 @@ export default function Today() {
             return (
               <Link key={t.id} href={{ pathname: "/task/[id]", params: { id: t.id } }} asChild>
                 <Pressable>
-                  <Card style={isRunning ? { borderColor: colors.brand, borderWidth: 2 } : undefined}>
+                  <Card style={isRunning ? { borderColor: colors.accent, borderWidth: 2 } : undefined}>
                     <View style={[s.row, { justifyContent: "space-between", alignItems: "flex-start" }]}>
                       <View style={{ flex: 1, gap: 4 }}>
                         <Text style={[s.body, { fontWeight: "600" }, finished && { color: colors.muted, textDecorationLine: "line-through" }]}>{t.title}</Text>
                         <Text style={s.muted}>{t.phase?.name}</Text>
                         <StatusPill status={t.status} />
-                        {t.statusNote && <Text style={[s.muted, { color: colors.warning }]}>{t.statusNote}</Text>}
+                        {t.statusNote && <Text style={[s.muted, { color: colors.warningInk }]}>{t.statusNote}</Text>}
                       </View>
                       {!finished && !isRunning && (
                         <Button title={timer ? "Switch" : "Start"} onPress={() => start(t)} style={{ minWidth: 84 }} />
@@ -93,12 +96,16 @@ export default function Today() {
       ))}
 
       <Button title="+ Add expense / receipt" variant="secondary" onPress={() => router.push("/expense/new")} />
+
+      <ThemePicker />
     </ScrollView>
   );
 }
 
 /** Clock in/out is what you're paid for. Task timers just record what you worked on. */
 function ClockCard({ projects, runningTitle }: { projects: { id: string; name: string }[]; runningTitle: string | null }) {
+  const s = useStyles();
+  const colors = useColors();
   const { field, clockIn, clockOut, startBreak, endBreak, stop } = useField();
   const shift = field.shift;
 
@@ -122,24 +129,24 @@ function ClockCard({ projects, runningTitle }: { projects: { id: string; name: s
 
   const onBreak = shift.onBreak;
   return (
-    <Card style={{ backgroundColor: onBreak ? colors.warningBg : colors.brand, borderColor: onBreak ? colors.warning : colors.brand }}>
-      <Text style={{ color: onBreak ? colors.warning : "#dbeafe", fontSize: 13, fontWeight: "600" }}>
+    <Card style={{ backgroundColor: onBreak ? colors.warningSoft : colors.accent, borderColor: onBreak ? colors.warningLine : colors.accent }}>
+      <Text style={{ color: onBreak ? colors.warningInk : colors.onAccentMuted, fontSize: 13, fontWeight: "600" }}>
         {onBreak ? "ON MEAL BREAK" : "ON THE CLOCK"} · since {new Date(shift.clockedInAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
       </Text>
-      <Elapsed since={onBreak ? onBreak.startedAt : shift.clockedInAt} style={{ color: onBreak ? colors.warning : "#fff", fontSize: 40, fontWeight: "700" }} />
+      <Elapsed since={onBreak ? onBreak.startedAt : shift.clockedInAt} style={{ color: onBreak ? colors.warningInk : colors.onAccent, fontSize: 40, fontWeight: "700" }} />
       {field.task ? (
         <View style={[s.row, { justifyContent: "space-between" }]}>
           <View style={{ flex: 1 }}>
-            <Text style={{ color: "#dbeafe", fontSize: 12 }}>WORKING ON</Text>
-            <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }} numberOfLines={1}>
+            <Text style={{ color: colors.onAccentMuted, fontSize: 12 }}>WORKING ON</Text>
+            <Text style={{ color: colors.onAccent, fontSize: 16, fontWeight: "600" }} numberOfLines={1}>
               {runningTitle ?? "Task"}
             </Text>
-            <Elapsed since={field.task.startedAt} style={{ color: "#dbeafe" }} />
+            <Elapsed since={field.task.startedAt} style={{ color: colors.onAccentMuted }} />
           </View>
           <Button title="Stop task" variant="secondary" onPress={() => stop()} />
         </View>
       ) : (
-        !onBreak && <Text style={{ color: "#dbeafe" }}>Not on a task right now (still paid). Pick a task below to track it.</Text>
+        !onBreak && <Text style={{ color: colors.onAccentMuted }}>Not on a task right now (still paid). Pick a task below to track it.</Text>
       )}
       <View style={s.row}>
         <Button title={onBreak ? "End break" : "Meal break"} variant="secondary" onPress={() => (onBreak ? endBreak() : startBreak())} style={{ flex: 1 }} />

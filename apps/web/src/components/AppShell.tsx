@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { can, clearSession, getSession, type Session } from "@/lib/session";
+import { ThemePicker } from "./ThemeProvider";
 import { cx } from "./ui";
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -35,27 +36,28 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen">
-      <nav className="border-b border-stone-200 bg-white">
+      <nav className="border-b border-line bg-surface">
         <div className="mx-auto flex max-w-7xl items-center gap-6 px-6 py-3">
-          <Link href="/" className="text-lg font-bold tracking-tight text-brand-700">
+          <Link href="/" className="text-lg font-bold tracking-tight text-accent-ink">
             timepeace
           </Link>
           <div className="flex gap-1">
             {links.map((l) => {
               const active = l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
               return (
-                <Link key={l.href} href={l.href} className={cx("rounded-md px-3 py-1.5 text-sm", active ? "bg-brand-50 font-medium text-brand-700" : "text-stone-600 hover:bg-stone-100")}>
+                <Link key={l.href} href={l.href} className={cx("rounded-md px-3 py-1.5 text-sm", active ? "bg-accent-soft font-medium text-accent-ink" : "text-ink-2 hover:bg-surface-3")}>
                   {l.label}
                 </Link>
               );
             })}
           </div>
-          <div className="ml-auto flex items-center gap-3 text-sm text-stone-600">
+          <div className="ml-auto flex items-center gap-3 text-sm text-ink-2">
+            <ThemePicker />
             <span>
-              {session.user.name} · <span className="text-stone-400">{session.org.name} ({role.toLowerCase()})</span>
+              {session.user.name} · <span className="text-faint">{session.org.name} ({role.toLowerCase()})</span>
             </span>
             <button
-              className="text-stone-500 hover:text-stone-800"
+              className="text-muted hover:text-ink"
               onClick={async () => {
                 await logout.mutateAsync().catch(() => {});
                 clearSession();

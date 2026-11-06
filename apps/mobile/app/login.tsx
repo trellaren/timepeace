@@ -3,7 +3,8 @@ import { errorMessage, useTRPC } from "@timepeace/api-client";
 import { useEffect, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, Share, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Button, Card, Field, colors, s } from "@/components/ui";
+import { ThemePicker } from "@/components/ThemePicker";
+import { Button, Card, Field, useColors, useStyles } from "@/components/ui";
 import { API_URL } from "@/lib/config";
 import { unsyncedByWorker } from "@/lib/db";
 import { summarizeUnsynced } from "@/lib/outbox";
@@ -12,6 +13,8 @@ import { useSession } from "@/lib/session";
 type Unsynced = Awaited<ReturnType<typeof unsyncedByWorker>>;
 
 export default function Login() {
+  const s = useStyles();
+  const colors = useColors();
   const trpc = useTRPC();
   const { signIn, notice } = useSession();
   const login = useMutation(trpc.auth.login.mutationOptions());
@@ -28,13 +31,13 @@ export default function Login() {
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 24, gap: 16 }} keyboardShouldPersistTaps="handled">
           <View>
-            <Text style={{ fontSize: 32, fontWeight: "800", color: colors.brand }}>timepeace</Text>
+            <Text style={{ fontSize: 32, fontWeight: "800", color: colors.accentInk }}>timepeace</Text>
             <Text style={s.muted}>Track your time, tasks and expenses on site.</Text>
           </View>
 
           {notice && (
-            <View accessibilityRole="alert" style={{ backgroundColor: colors.warningBg, borderRadius: 10, padding: 12 }}>
-              <Text style={{ color: colors.warning }}>
+            <View accessibilityRole="alert" style={{ backgroundColor: colors.warningSoft, borderRadius: 10, padding: 12 }}>
+              <Text style={{ color: colors.warningInk }}>
                 <Text accessibilityElementsHidden>▲ </Text>
                 {notice}
               </Text>
@@ -58,7 +61,7 @@ export default function Login() {
 
           <Field label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" autoComplete="email" textContentType="username" />
           <Field label="Password" value={password} onChangeText={setPassword} secureTextEntry textContentType="password" />
-          {login.error && <Text style={{ color: colors.critical }}>{errorMessage(login.error)}</Text>}
+          {login.error && <Text style={{ color: colors.criticalInk }}>{errorMessage(login.error)}</Text>}
           <Button
             big
             title="Sign in"
@@ -69,6 +72,7 @@ export default function Login() {
             }}
           />
           {!API_URL.startsWith("https://") && <Text style={[s.muted, { textAlign: "center" }]}>Demo: jake@acme.test / timepeace</Text>}
+          <ThemePicker />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

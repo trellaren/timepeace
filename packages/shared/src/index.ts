@@ -10,3 +10,4 @@ export * from "./taxPrep";
 export * from "./csv";
 export * from "./schemas";
 export * from "./team";
+export * from "./theme";

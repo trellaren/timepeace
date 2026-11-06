@@ -97,6 +97,28 @@ The MVP computes reports on request; the dataset is small. The plan is **pg-boss
 - push notifications (Expo Notifications)
 - generating year-end CPA packages
 
+## Themes
+
+Web and mobile share one set of semantic color tokens (`packages/shared/src/theme.ts`): surfaces, ink, lines, accent, status colors and chart colors. Each theme sets every token:
+
+| Theme | For |
+|---|---|
+| Light | The standard look |
+| Dark | Low light |
+| Sunlight | Phones and tablets in direct sun. Black ink, stronger borders, darker accent and status colors, and 7:1 contrast for text. |
+| System | Follows the device setting (Light or Dark) |
+
+- **Web:** the root layout writes each theme as `--tp-*` CSS variables. Tailwind exposes them as utilities (`bg-surface`, `text-muted`, `border-line`, `text-critical-ink`…).
+  - The default Tailwind palette is removed, so a raw color like `stone-500` can't be used by accident and ignore the theme.
+  - An inline script sets `<html data-theme>` from `localStorage` before the first paint, so there's no flash.
+  - The picker is in the top bar and on the sign-in page.
+- **Mobile:** `ThemeProvider` (`src/lib/theme.tsx`) and `makeStyles` build each screen's styles once per theme.
+  - Headers, the tab bar and the status bar follow the theme.
+  - The choice is saved on the phone and kept across sign-out.
+  - The picker is on the Today screen and the sign-in screen.
+  - `app.json` uses `userInterfaceStyle: automatic` (with `expo-system-ui` for Android), so System can follow the device.
+- **Contrast:** `theme.test.ts` checks every text/background pair the apps draw in every theme: 4.5:1 for text and 3:1 for marks, raised to 7:1 for text in Sunlight. Chart colors also pass the color-blindness checks.
+
 ## File storage
 
 The interface is `apps/api/src/lib/storage.ts`. Development and tests store files on local disk under `.data/uploads`. Production (`STORAGE_DRIVER=supabase`) uses a private Supabase Storage bucket through its REST API with the service key, server-side only. Large downloads (the CPA package) are handed out as short-lived signed URLs. See [deployment](deployment.md).

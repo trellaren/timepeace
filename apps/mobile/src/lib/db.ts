@@ -119,9 +119,12 @@ export const kv = {
     const db = await localDb();
     await db.runAsync("INSERT INTO kv (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", key, JSON.stringify(value));
   },
-  /** Cached screens and clock state only. Never touches the outbox: unsynced hours must survive sign-out. */
+  /**
+   * Cached screens and clock state only. Never touches the outbox: unsynced hours must survive sign-out.
+   * Device preferences (`pref:` keys, such as the theme) also stay.
+   */
   async clearCache() {
     const db = await localDb();
-    await db.execAsync("DELETE FROM kv;");
+    await db.execAsync("DELETE FROM kv WHERE key NOT LIKE 'pref:%';");
   },
 };
