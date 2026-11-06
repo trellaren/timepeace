@@ -245,7 +245,7 @@ function Expenses() {
                 {e.note && <div className="text-xs text-stone-500">{e.note}</div>}
               </td>
               <td className="text-xs">
-                {e.project.name}
+                {e.project?.name ?? "Company overhead"}
                 {e.task && <div className="text-stone-500">{e.task.title}</div>}
               </td>
               <td className="text-right">

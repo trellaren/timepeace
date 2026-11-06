@@ -7,6 +7,7 @@ import { orgRouter } from "./routers/org";
 import { payrollRouter } from "./routers/payroll";
 import { projectsRouter } from "./routers/projects";
 import { tasksRouter } from "./routers/tasks";
+import { taxRouter } from "./routers/tax";
 import { router } from "./trpc";
 
 export const appRouter = router({
@@ -18,6 +19,7 @@ export const appRouter = router({
   approvals: approvalsRouter,
   payroll: payrollRouter,
   finance: financeRouter,
+  tax: taxRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -25,9 +25,10 @@
 - OT premium allocation to jobs; crew productivity; rework cost; client profitability; completed-job benchmarks feeding new estimates
 - Nightly report snapshots
 
-## Phase 4: Tax center
+## Phase 4: Tax center ✅
 
-- Totals by tax line per entity type, 1099-NEC tracker and export, W-9 collection, mileage log UI, equipment / §179 flags, quarterly estimate worksheet, year-end CPA package
+- Done: totals by tax line (Schedule C, 1120-S / 1125-A), overhead expenses, 1099-NEC tracker with W-9/TIN capture and CSV, mileage log, equipment flags, sales tax, quarterly estimate worksheet, year-end CPA package ZIP
+- Next: W-9 request by email (vendor self-serve upload), mileage entry on mobile, 1065 / 1120 line mappings, IRS FIRE / IRIS e-file layout for 1099s, depreciation schedules (left to the CPA for now)
 
 ## Phase 5: Integrations
 

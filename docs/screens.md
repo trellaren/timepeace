@@ -16,7 +16,11 @@
 | Finance | finance roles | ✅ MVP | Portfolio P&L, estimate accuracy by trade, margin by project type, material-wait time |
 | Schedule board (Gantt/calendar) | managers | Phase 2 | Drag tasks onto worker-days; conflict warnings |
 | Change orders, invoices/draws, cash flow | managers, finance | Phase 3 | |
-| Tax center | owner, accountant | Phase 4 | Category totals by tax line, 1099 tracker, mileage, quarterly estimates, CPA package |
+| Tax → Overview | owner, accountant | ✅ | Year selector; cash-basis revenue, COGS, deductions, net profit; needs-attention flags; COGS and deductions by Schedule C / 1120-S line; payroll, mileage, capital purchases, sales tax; **Download CPA package** |
+| Tax → Deductions | owner, accountant | ✅ | Every expense for the year with inline tax-category and payment-method edits; add company (overhead) expenses |
+| Tax → 1099-NEC | owner, accountant | ✅ | Per-vendor status (file / below threshold / exempt / goods), Box 1, card-excluded, W-9 and issues; edit W-9 details and TIN (encrypted) |
+| Tax → Mileage | owner, accountant | ✅ | Trip log with job and purpose; deduction at the year's IRS rate |
+| Tax → Estimated taxes | owner, accountant | ✅ | Projection, required annual amount (90% current vs prior-year safe harbor), quarterly status, payments, and the year's assumptions |
 | Settings | owner (pay rates also HR) | Phase 2 | Org, OT rules, pay periods, members and roles, pay rates, cost codes, templates, checklists |
 
 ## Mobile (field)

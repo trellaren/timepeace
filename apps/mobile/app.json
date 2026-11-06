@@ -9,22 +9,27 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.timepeace.app",
+      "bundleIdentifier": "com.trellaren.timepeace",
       "infoPlist": {
         "NSCameraUsageDescription": "Timepeace uses the camera to photograph receipts and job-site progress.",
         "NSPhotoLibraryUsageDescription": "Timepeace lets you attach receipt photos from your library.",
         "NSLocationWhenInUseUsageDescription": "Timepeace records your location when you start and stop a task so your manager can confirm site time."
-      }
+      },
+      "appleTeamId": "7265M7TMWH"
     },
     "android": {
-      "package": "com.timepeace.app",
+      "package": "com.trellaren.timepeace",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "permissions": ["CAMERA", "ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
+      "permissions": [
+        "CAMERA",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ],
       "predictiveBackGestureEnabled": false
     },
     "web": {

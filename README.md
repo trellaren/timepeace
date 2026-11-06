@@ -5,7 +5,7 @@ Project management, time tracking, job costing and payroll/tax handoff for small
 - **Managers (web):** create projects from templates, break them into phases and tasks, set budgets by cost code, assign crews, approve hours and expenses, and see where each job makes or loses money.
 - **Workers (iOS/Android):** clock in and out (that's what they're paid for, including time between tasks), see today's tasks, start/stop/switch task timers, mark tasks done, flag *needs materials* or *blocked*, snap receipts, and submit their week. All of it works offline on the job site.
 - **HR (web):** export approved hours and reimbursements to the payroll provider as CSV/PDF, then mark them paid.
-- **Owners and accountants:** portfolio P&L, estimate accuracy by trade, and margin by project type, plus (Phase 4) tax prep for the CPA.
+- **Owners and accountants:** portfolio P&L, estimate accuracy by trade, and margin by project type, plus a tax center: deductions by Schedule C / 1120-S line, a 1099-NEC tracker with W-9s, a mileage log, a quarterly estimated-tax worksheet, and a one-click year-end package for the CPA. (It organizes records; it doesn't file or give tax advice.)
 
 Design docs live in [`docs/`](docs):
 
@@ -27,7 +27,7 @@ TypeScript everywhere in a pnpm + Turborepo monorepo:
 | `apps/api` | Fastify + tRPC v11, Prisma 7 / PostgreSQL |
 | `apps/web` | Next.js 16, Tailwind 4, TanStack Query |
 | `apps/mobile` | Expo SDK 58, Expo Router, SQLite offline outbox |
-| `packages/shared` | Domain logic: overtime, job cost, timer, pay periods, tax map, zod schemas |
+| `packages/shared` | Domain logic: overtime, job cost, shifts, pay periods, tax map, 1099 and estimated-tax rules, zod schemas |
 | `packages/db` | Prisma schema, migrations, demo seed |
 | `packages/api-client` | Typed tRPC client shared by web and mobile |
 
@@ -51,7 +51,7 @@ Demo logins all use the password `timepeace`:
 | `owner@acme.test` | owner (everything) |
 | `manager@acme.test` | manager |
 | `hr@acme.test` | HR / payroll |
-| `accountant@acme.test` | accountant (read-only finance) |
+| `accountant@acme.test` | accountant (finance read-only; tax center) |
 | `jake@acme.test`, `luis@`, `sam@`, `dana@`, `tyler@` | W-2 workers (mobile) |
 | `rosa@acme.test` | 1099 electrician |
 
@@ -60,7 +60,7 @@ On a physical phone, set `EXPO_PUBLIC_API_URL` to your computer's LAN address, e
 ## Tests
 
 ```bash
-pnpm --filter @timepeace/shared test     # domain unit tests (overtime, job cost, timer, DST…)
+pnpm --filter @timepeace/shared test     # domain unit tests (overtime, job cost, shifts, 1099, estimates, DST…)
 pnpm --filter @timepeace/mobile test     # offline outbox flush logic
 
 # API integration tests need a disposable database whose name ends in _test

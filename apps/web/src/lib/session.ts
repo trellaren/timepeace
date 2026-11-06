@@ -35,4 +35,5 @@ export const can = {
   manage: (r?: Role) => r === "OWNER" || r === "MANAGER",
   finance: (r?: Role) => r === "OWNER" || r === "MANAGER" || r === "ACCOUNTANT",
   payroll: (r?: Role) => r === "OWNER" || r === "HR",
+  tax: (r?: Role) => r === "OWNER" || r === "ACCOUNTANT",
 };

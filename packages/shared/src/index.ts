@@ -6,5 +6,6 @@ export * from "./overtime";
 export * from "./jobCost";
 export * from "./shift";
 export * from "./tax";
+export * from "./taxPrep";
 export * from "./csv";
 export * from "./schemas";

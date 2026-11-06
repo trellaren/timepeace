@@ -1,5 +1,5 @@
 import { createReadStream } from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { Readable } from "node:stream";
 import { env } from "../env";
@@ -11,6 +11,7 @@ import { env } from "../env";
 export interface Storage {
   put(key: string, data: Buffer, contentType: string): Promise<void>;
   get(key: string): Readable;
+  read(key: string): Promise<Buffer>;
 }
 
 export const localStorage: Storage = {
@@ -23,6 +24,11 @@ export const localStorage: Storage = {
     const file = path.join(env.uploadDir, key);
     if (!file.startsWith(path.resolve(env.uploadDir))) throw new Error("Invalid key");
     return createReadStream(file);
+  },
+  async read(key) {
+    const file = path.join(env.uploadDir, key);
+    if (!file.startsWith(path.resolve(env.uploadDir))) throw new Error("Invalid key");
+    return readFile(file);
   },
 };
 
