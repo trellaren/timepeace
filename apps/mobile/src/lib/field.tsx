@@ -6,9 +6,10 @@ import * as Network from "expo-network";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Alert, AppState } from "react-native";
 import superjson from "superjson";
-import { kv, sqliteOutbox } from "./db";
+import { kv, outboxFor } from "./db";
 import { currentGeo } from "./geo";
 import { flushOutbox, type OutboxRow } from "./outbox";
+import { useSession } from "./session";
 import { trpcClient, uploadReceipt } from "./trpc";
 
 export type MyDay = RouterOutputs["field"]["myDay"];
@@ -44,6 +45,11 @@ const now = () => new Date().toISOString();
 const uuid = () => Crypto.randomUUID();
 
 export function FieldProvider({ children }: { children: ReactNode }) {
+  const { session } = useSession();
+  // Mounted only while signed in (keyed by user in the root layout).
+  const userId = session!.user.id;
+  const userName = session!.user.name;
+  const store = useMemo(() => outboxFor({ id: userId, name: userName }), [userId, userName]);
   const trpc = useTRPC();
   const qc = useQueryClient();
   const dayQuery = useQuery(trpc.field.myDay.queryOptions());
@@ -72,10 +78,10 @@ export function FieldProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshCounts = useCallback(async () => {
-    const [c, rejected] = await Promise.all([sqliteOutbox.count(), sqliteOutbox.rejected()]);
+    const [c, rejected] = await Promise.all([store.count(), store.rejected()]);
     setSync((s) => ({ ...s, pending: c.pending, rejected }));
     return c;
-  }, []);
+  }, [store]);
 
   // Persist the last good My Day; adopt the server's running timer when nothing is queued locally.
   useEffect(() => {
@@ -95,7 +101,7 @@ export function FieldProvider({ children }: { children: ReactNode }) {
     flushing.current = true;
     setSync((s) => ({ ...s, syncing: true }));
     try {
-      const r = await flushOutbox({ store: sqliteOutbox, send: (ops) => trpcClient.field.sync.mutate({ ops }), uploadReceipt });
+      const r = await flushOutbox({ store, send: (ops) => trpcClient.field.sync.mutate({ ops }), uploadReceipt });
       setSync((s) => ({ ...s, offline: !!r.offlineError, lastSyncAt: r.offlineError ? s.lastSyncAt : new Date() }));
       if (r.sent > 0) await qc.invalidateQueries({ queryKey: trpc.field.pathKey() });
     } finally {
@@ -103,7 +109,7 @@ export function FieldProvider({ children }: { children: ReactNode }) {
       setSync((s) => ({ ...s, syncing: false }));
       await refreshCounts();
     }
-  }, [qc, trpc, refreshCounts]);
+  }, [qc, trpc, refreshCounts, store]);
 
   // Triggers: startup, every 30s, network regained, app foregrounded.
   useEffect(() => {
@@ -120,11 +126,11 @@ export function FieldProvider({ children }: { children: ReactNode }) {
 
   const enqueue = useCallback(
     async (ops: OutboxOp[], receiptUri: string | null = null) => {
-      for (const op of ops) await sqliteOutbox.enqueue(op, op.type === "expense.create" ? receiptUri : null);
+      for (const op of ops) await store.enqueue(op, op.type === "expense.create" ? receiptUri : null);
       await refreshCounts();
       void syncNow();
     },
-    [refreshCounts, syncNow],
+    [refreshCounts, syncNow, store],
   );
 
   /** Optimistically patch a task in the cached My Day. */
@@ -211,11 +217,11 @@ export function FieldProvider({ children }: { children: ReactNode }) {
       sync,
       syncNow,
       async dismissRejected(seq) {
-        await sqliteOutbox.dismiss(seq);
+        await store.dismiss(seq);
         await refreshCounts();
       },
     }),
-    [dayQuery, cachedDay, field, sync, syncNow, patchTask, enqueue, dispatch, refreshCounts],
+    [dayQuery, cachedDay, field, sync, syncNow, patchTask, enqueue, dispatch, refreshCounts, store],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

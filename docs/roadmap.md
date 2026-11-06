@@ -18,7 +18,7 @@
 - Geofence check on clock-in (flag, don't block)
 - ✅ Team: invites, roles, deactivation, pay rates; `create-org` for new companies
 - Settings UI (org, OT rules, cost codes, templates)
-- Mobile: sign out cleanly when a session is revoked (without dropping unsynced offline hours)
+- ✅ Mobile: signs out cleanly when a session is revoked; unsynced hours are kept per worker and can be shared with a manager
 - Optional invite email delivery (SMTP / provider) alongside copy/text links
 - S3/MinIO storage driver with presigned URLs; manager mobile views; daily logs with photos
 

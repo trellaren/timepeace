@@ -74,6 +74,11 @@ Job sites often have no signal, so every field action is written to the device b
    - **Shift:** starting a task while off the clock clocks the worker in first. The server also opens a shift if an older client sends `time.start` alone, so task time is never unpaid. A meal break or a clock-out stops the running task. Clocking in while an old shift is still open (a forgotten clock-out) closes the old one at its last recorded activity and flags it `AUTO_CLOSED`. A manager must confirm or correct it before the timesheet can be approved.
    - **Task timer:** a worker has one running task timer. A `time.start` closes any open entry at the same instant (switching tasks). Stopping a task keeps the worker clocked in.
    - **Task status:** last write wins by device time. Stale updates are ignored, and VERIFIED tasks can't be changed from the field.
+6. **Ownership and sign-out.** Each outbox row stores the worker who made it (`user_id`), and the app only ever flushes the signed-in worker's rows, so one person's hours can never be uploaded under someone else's login on a shared phone.
+   - **Signing out keeps the outbox.** Only cached screens and clock state are cleared. The rows upload the next time that worker signs in on the phone.
+   - **Revoked session** (deactivated on the Team page, or the 30-day session expired): any API response of 401 while signed in makes the app sign out by itself and explain why. The flush keeps every op queued on a 401.
+   - **Sign-in screen:** it lists changes still on the phone per worker, with **Share with manager**. This gives a plain-text list of clock-ins, clock-outs, tasks and expenses, so hours a deactivated worker never uploaded can still be paid.
+   - Rows queued by app versions before this change (untagged) are assigned to whoever is signed in when the new version first starts. Those versions wiped the outbox on sign-out, so any surviving rows belong to that person.
 
 ## Background work
 
