@@ -5,12 +5,11 @@ import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from "react-
 import { Elapsed } from "@/components/Elapsed";
 import { SyncBanner } from "@/components/SyncBanner";
 import { Button, Card, StatusPill, colors, s } from "@/components/ui";
-import { sqliteOutbox } from "@/lib/db";
 import { useField, type DayTask } from "@/lib/field";
 import { useSession } from "@/lib/session";
 
 export default function Today() {
-  const { day, dayLoading, timer, start, stop, refresh } = useField();
+  const { day, dayLoading, timer, start, stop, refresh, sync } = useField();
   const { session, signOut } = useSession();
   const [refreshing, setRefreshing] = useState(false);
   const running = timer && day?.tasks.find((t) => t.id === timer.taskId);
@@ -47,7 +46,7 @@ export default function Today() {
             {day?.date ?? ""} · {formatMinutes(paidToday)} on the clock today
           </Text>
         </View>
-        <Pressable onPress={signOutWithCheck(signOut)} accessibilityRole="button">
+        <Pressable onPress={signOutWithCheck(signOut, sync.pending)} accessibilityRole="button">
           <Text style={s.muted}>Sign out</Text>
         </Pressable>
       </View>
@@ -160,15 +159,18 @@ function ClockCard({ projects, runningTitle }: { projects: { id: string; name: s
   );
 }
 
-function signOutWithCheck(signOut: () => Promise<void>) {
-  return async () => {
-    // Warn before discarding unsynced work.
-    const c = await sqliteOutbox.count();
-    if (c.pending > 0) {
-      Alert.alert("Unsynced changes", `${c.pending} change(s) haven't uploaded yet. Signing out will discard them.`, [
-        { text: "Cancel", style: "cancel" },
-        { text: "Sign out anyway", style: "destructive", onPress: () => signOut() },
-      ]);
-    } else await signOut();
+function signOutWithCheck(signOut: () => Promise<void>, pending: number) {
+  return () => {
+    // Unsynced changes are kept on the phone (tagged to this worker) and upload at their next sign-in.
+    if (pending > 0) {
+      Alert.alert(
+        "Changes not uploaded yet",
+        `${pending} change(s) haven't uploaded. They'll stay on this phone and upload the next time you sign in here. Sign out anyway?`,
+        [
+          { text: "Stay signed in", style: "cancel" },
+          { text: "Sign out", onPress: () => void signOut() },
+        ],
+      );
+    } else void signOut();
   };
 }

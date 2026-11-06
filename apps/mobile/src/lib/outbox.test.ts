@@ -1,6 +1,6 @@
 import type { OutboxOp, SyncOpResult } from "@timepeace/shared";
 import { describe, expect, it, vi } from "vitest";
-import { flushOutbox, memoryStore } from "./outbox";
+import { flushOutbox, memoryStore, summarizeUnsynced } from "./outbox";
 
 let n = 0;
 const id = () => `00000000-0000-4000-8000-${String(++n).padStart(12, "0")}`;
@@ -70,5 +70,41 @@ describe("flushOutbox", () => {
     expect(upload).toHaveBeenCalledTimes(1);
     const sent = send.mock.calls[0]![0][0]!;
     expect(sent.type === "expense.create" && sent.payload.receiptFileId).toBe("file_123");
+  });
+});
+
+describe("summarizeUnsynced", () => {
+  it("lists changes in time order in plain English, flagging rejected ones", async () => {
+    const at = (iso: string) => iso;
+    const clockIn: OutboxOp = { opId: id(), type: "shift.clockIn", at: "2026-11-06T14:00:00.000Z", payload: { shiftId: id(), projectId: "p1" } };
+    const clockOut: OutboxOp = { opId: id(), type: "shift.clockOut", at: "2026-11-06T23:30:00.000Z", payload: { shiftId: id() } };
+    const exp = { ...expense(), at: "2026-11-06T18:00:00.000Z" };
+    const text = summarizeUnsynced(
+      "Dana",
+      [
+        { op: clockOut, status: "pending", error: null },
+        { op: exp, status: "rejected", error: "Project closed" },
+        { op: clockIn, status: "pending", error: null },
+      ],
+      at,
+    );
+    expect(text.split("\n")).toEqual([
+      "Timepeace entries saved on Dana's phone that haven't uploaded (3):",
+      "• 2026-11-06T14:00:00.000Z: Clocked in",
+      "• 2026-11-06T18:00:00.000Z: Expense $1.00 at HD (paid personally, 2026-11-05) [not accepted: Project closed]",
+      "• 2026-11-06T23:30:00.000Z: Clocked out",
+    ]);
+  });
+});
+
+describe("flushOutbox when the session is revoked", () => {
+  it("keeps every change queued (nothing is dropped) so it can upload after signing back in", async () => {
+    const store = memoryStore();
+    await store.enqueue(start());
+    await store.enqueue(start());
+    const unauthorized = Object.assign(new Error("UNAUTHORIZED"), { data: { code: "UNAUTHORIZED", httpStatus: 401 } });
+    const r = await flushOutbox({ store, send: async () => Promise.reject(unauthorized), uploadReceipt: vi.fn() });
+    expect(r.offlineError).toBe("UNAUTHORIZED");
+    expect(store.rows.map((x) => x.status)).toEqual(["pending", "pending"]);
   });
 });

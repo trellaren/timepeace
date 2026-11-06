@@ -135,3 +135,40 @@ export function memoryStore(): OutboxStore & { rows: OutboxRow[] } {
     },
   };
 }
+
+const STATUS_WORDS: Record<string, string> = { IN_PROGRESS: "in progress", NEEDS_MATERIALS: "needs materials", BLOCKED: "blocked", DONE: "done" };
+
+/** Plain-English description of one queued change, for people (not the server). */
+export function describeOp(op: OutboxOp): string {
+  switch (op.type) {
+    case "shift.clockIn":
+      return "Clocked in";
+    case "shift.clockOut":
+      return op.payload.note ? `Clocked out (note: ${op.payload.note})` : "Clocked out";
+    case "shift.breakStart":
+      return "Started meal break";
+    case "shift.breakEnd":
+      return "Ended meal break";
+    case "time.start":
+      return "Started a task";
+    case "time.stop":
+      return "Stopped a task";
+    case "task.status":
+      return `Marked a task ${STATUS_WORDS[op.payload.status] ?? op.payload.status}${op.payload.note ? ` (${op.payload.note})` : ""}`;
+    case "material.request":
+      return `Requested materials: ${op.payload.description}${op.payload.quantity ? ` × ${op.payload.quantity}` : ""}`;
+    case "expense.create":
+      return `Expense $${(op.payload.amountCents / 100).toFixed(2)} at ${op.payload.vendorName} (${op.payload.paidBy === "PERSONAL" ? "paid personally" : "company card"}, ${op.payload.spentOn})`;
+  }
+}
+
+/**
+ * Text a worker can send their manager when queued changes can't be uploaded (e.g. their access
+ * was turned off before the phone synced). Clock-in/out times are what payroll needs.
+ */
+export function summarizeUnsynced(name: string, rows: Pick<OutboxRow, "op" | "status" | "error">[], formatTime: (iso: string) => string): string {
+  const lines = [...rows]
+    .sort((a, b) => a.op.at.localeCompare(b.op.at))
+    .map((r) => `• ${formatTime(r.op.at)}: ${describeOp(r.op)}${r.status === "rejected" ? ` [not accepted: ${r.error ?? "rejected"}]` : ""}`);
+  return [`Timepeace entries saved on ${name}'s phone that haven't uploaded (${rows.length}):`, ...lines].join("\n");
+}
