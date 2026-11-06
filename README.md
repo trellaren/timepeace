@@ -17,6 +17,7 @@ Design docs live in [`docs/`](docs):
 | [screens](docs/screens.md) | Web and mobile screen inventory |
 | [finance & tax](docs/finance-and-tax.md) | Job-cost, overtime and tax formulas |
 | [roadmap](docs/roadmap.md) | Phases, open risks and decisions |
+| [deployment](docs/deployment.md) | Vercel + Supabase setup, env vars, migrations, deploys |
 
 ## Stack
 
@@ -55,7 +56,9 @@ Demo logins all use the password `timepeace`:
 | `jake@acme.test`, `luis@`, `sam@`, `dana@`, `tyler@` | W-2 workers (mobile) |
 | `rosa@acme.test` | 1099 electrician |
 
-On a physical phone, set `EXPO_PUBLIC_API_URL` to your computer's LAN address, e.g. `http://192.168.1.20:4000`.
+On a physical phone, set `EXPO_PUBLIC_API_URL` to your computer's LAN address, e.g. `http://192.168.1.20:4000`, or to the hosted API.
+
+**Hosted:** https://timepeace-web.vercel.app (API at https://timepeace-api.vercel.app) runs the same demo company, but **not** with the public `timepeace` password. See [docs/deployment.md](docs/deployment.md).
 
 ## Tests
 

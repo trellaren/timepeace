@@ -26,7 +26,7 @@ flowchart LR
   W -- tRPC --> A
   W -- GET /payroll-exports/:id/download --> A
   A[API<br/>Fastify + tRPC] --> P[(Postgres)]
-  A --> S[(File storage<br/>local disk, then S3/MinIO)]
+  A --> S[(File storage<br/>local disk or Supabase Storage)]
   A -. CSV/PDF .-> HR[Payroll provider]
   A -. year-end package .-> CPA[CPA / tax preparer]
 ```
@@ -85,7 +85,7 @@ The MVP computes reports on request; the dataset is small. The plan is **pg-boss
 
 ## File storage
 
-The interface is `apps/api/src/lib/storage.ts`. The MVP stores files on local disk under `.data/uploads`. The production driver will be S3-compatible storage (MinIO in `docker-compose.yml`), serving files through short-lived presigned URLs.
+The interface is `apps/api/src/lib/storage.ts`. Development and tests store files on local disk under `.data/uploads`. Production (`STORAGE_DRIVER=supabase`) uses a private Supabase Storage bucket through its REST API with the service key, server-side only. Large downloads (the CPA package) are handed out as short-lived signed URLs. See [deployment](deployment.md).
 
 Downloads are always authorized against org and role. Workers can only fetch their own uploads.
 

@@ -29,6 +29,9 @@ await build({
   format: "esm",
   target: "node22",
   sourcemap: "linked",
+  // Production checks in src/env.ts must run in the deployed function. Setting NODE_ENV as a
+  // project env var instead would also make the build's install skip devDependencies.
+  define: { "process.env.NODE_ENV": '"production"' },
   logLevel: "warning",
   // Bundled CommonJS helpers expect these in ESM output.
   banner: {
