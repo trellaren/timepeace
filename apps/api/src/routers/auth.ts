@@ -2,6 +2,7 @@ import { loginInput } from "@timepeace/shared";
 import { TRPCError } from "@trpc/server";
 import bcrypt from "bcryptjs";
 import { db } from "../lib/db";
+import { assertLoginAllowed, recordLoginFailure, recordLoginSuccess } from "../services/loginThrottle";
 import { startSession } from "../services/session";
 import { authedProcedure, publicProcedure, router } from "../trpc";
 
@@ -9,14 +10,21 @@ import { authedProcedure, publicProcedure, router } from "../trpc";
 const DUMMY_HASH = bcrypt.hashSync("timing-equalizer", 10);
 
 export const authRouter = router({
-  login: publicProcedure.input(loginInput).mutation(async ({ input }) => {
+  login: publicProcedure.input(loginInput).mutation(async ({ ctx, input }) => {
+    const ip = ctx.ip ?? "unknown";
+    await assertLoginAllowed(db(), input.email, ip);
     const user = await db().user.findUnique({
       where: { email: input.email },
       include: { memberships: { where: { active: true }, include: { org: true }, orderBy: { createdAt: "asc" } } },
     });
     const ok = await bcrypt.compare(input.password, user?.passwordHash ?? DUMMY_HASH);
     const membership = user?.memberships[0];
-    if (!user || !ok || !membership) throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password" });
+    if (!user || !ok || !membership) {
+      // A right password for a deactivated account isn't a guess, so don't count it.
+      if (!ok) await recordLoginFailure(db(), input.email, ip);
+      throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password" });
+    }
+    await recordLoginSuccess(db(), input.email);
 
     return startSession(db(), user, membership);
   }),

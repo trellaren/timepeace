@@ -86,4 +86,5 @@ erDiagram
 | `TaxYearSettings` | Per org × year: 1099 threshold, IRS mileage rate (milli-cents), effective tax rate for estimates, prior-year total tax and whether prior AGI exceeded $150k (safe harbor 110%). |
 | `EstimatedTaxPayment` | Org × year × quarter, amount and date paid. |
 | `ProcessedOp` | Dedupe ledger for offline ops. |
+| `LoginThrottle` | Failed sign-in counters keyed by hashed email or client IP, with a 15-minute window and `lockedUntil`. See Auth in [architecture](architecture.md). |
 | `AuditLog` | Before/after and reason for contract value changes, budget lines, timesheet reviews, time-entry edits, expense reviews and payroll exports. |

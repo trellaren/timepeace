@@ -901,3 +901,16 @@ model Invite {
 
   @@index([orgId, email])
 }
+
+/// Failed sign-in counters (per hashed email and per client IP) for rate limiting.
+/// Fixed 15-minute windows; `lockedUntil` is set when a key hits its limit.
+model LoginThrottle {
+  /// "email:<sha256 of lowercased email>" or "ip:<address>"
+  key         String    @id
+  failures    Int
+  windowStart DateTime
+  lockedUntil DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  @@index([updatedAt])
+}

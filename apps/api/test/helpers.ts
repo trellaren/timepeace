@@ -23,3 +23,6 @@ export const anon = () => createCaller({ auth: null });
 export async function callerFor(token: string) {
   return createCaller({ auth: await resolveAuth(token) });
 }
+
+/** Public caller as if the request came from `ip` (for rate-limit tests). */
+export const anonFrom = (ip: string) => createCaller({ auth: null, ip });

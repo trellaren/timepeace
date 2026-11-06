@@ -43,6 +43,15 @@ flowchart LR
 
 - Email and password, hashed with bcrypt.
 - A login returns an opaque bearer token. Only its SHA-256 is stored, in `Session`. Sessions last 30 days.
+- **Failed sign-in limits** (`apps/api/src/services/loginThrottle.ts`), kept in Postgres (`LoginThrottle`) because serverless instances share no memory:
+  - **Per email:** 8 failures in 15 minutes locks that email for 15 minutes.
+  - **Per client IP:** 40 failures in 15 minutes locks that IP.
+  - A locked request gets HTTP 429 *before* the password is checked, identically for unknown emails, so lockouts don't reveal which accounts exist.
+  - A correct password clears its email's count, but not the IP's, so one valid account can't be used to reset an attacker's IP count.
+  - A correct password for a deactivated account isn't counted.
+  - Existing-account password checks on the invite page share these limits.
+  - Emails are stored as SHA-256 hashes. Untouched rows older than a day are purged opportunistically.
+  - The client IP comes from Vercel's `x-vercel-forwarded-for` / `x-real-ip`, which Vercel overwrites, and only when running on Vercel. Elsewhere it's the socket address, so a header can't choose the IP.
 - Mobile keeps the token in the Keychain/Keystore via `expo-secure-store`.
 - Web keeps the token in `localStorage` for the MVP. *Roadmap:* move web to an httpOnly cookie session to reduce XSS exposure.
 - Roles are set per organization on `Membership`:
