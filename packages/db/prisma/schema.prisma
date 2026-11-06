@@ -193,6 +193,7 @@ model Organization {
   auditLogs         AuditLog[]
   files             FileObject[]
   payrollExports    PayrollExport[]
+  invites           Invite[]
 }
 
 model User {
@@ -220,6 +221,8 @@ model User {
   mileageLogs     MileageLog[]
   auditLogs       AuditLog[]
   processedOps    ProcessedOp[]
+  invitesSent     Invite[]          @relation("InviteSender")
+  invitesAccepted Invite[]          @relation("InviteAcceptor")
 }
 
 model Membership {
@@ -869,4 +872,32 @@ model ProcessedOp {
   error       String?
   processedAt DateTime @default(now())
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// A single-use link that adds someone to an org. Only the SHA-256 of the token is stored; the
+/// raw link is shown to the inviter once (creation or regeneration).
+model Invite {
+  id               String                @id @default(cuid())
+  orgId            String
+  email            String
+  name             String
+  phone            String?
+  role             Role
+  /// For WORKER invites.
+  classification   WorkerClassification?
+  /// Starting pay rate; only OWNER/HR may set it.
+  hourlyRateCents  Int?
+  tokenHash        String                @unique
+  invitedById      String
+  expiresAt        DateTime
+  acceptedAt       DateTime?
+  acceptedUserId   String?
+  revokedAt        DateTime?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  org              Organization          @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  invitedBy        User                  @relation("InviteSender", fields: [invitedById], references: [id])
+  acceptedUser     User?                 @relation("InviteAcceptor", fields: [acceptedUserId], references: [id])
+
+  @@index([orgId, email])
 }

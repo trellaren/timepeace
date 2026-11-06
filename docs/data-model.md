@@ -70,7 +70,8 @@ erDiagram
 | Entity | Notes |
 |---|---|
 | `Organization` | Timezone, entity type (drives tax line mapping), pay-period type and anchor, workweek start, overtime rules (JSON matching `OvertimeRules`), default labor burden. |
-| `Membership` | User and org plus `role`. A user can belong to several orgs; the MVP signs into the first one. |
+| `Membership` | User and org plus `role` and `active`. A user can belong to several orgs; the MVP signs into the first active one. Deactivating sets `active = false` and deletes that org's sessions. |
+| `Invite` | Pending access for an email: role, W-2/1099 classification and optional starting pay for workers, `expiresAt` (7 days), `acceptedAt` / `revokedAt`. Stores only `tokenHash` (SHA-256), never the link. Accepting creates or links the `User`, upserts the `Membership`, and sets up the `WorkerProfile` and first `PayRate`. |
 | `WorkerProfile` / `PayRate` | Classification is `W2` or `CONTRACTOR_1099`; burden can be overridden. Rates are effective-dated, and the rate in effect on the work date is used for job cost and gross pay. |
 | `Project` | Contract type `FIXED` / `COST_PLUS` / `T_AND_M`, contract value, `markupBps` for cost-based billing, `projectType` for cross-project analysis, address and optional geofence. |
 | `Task` | Status `TODO → IN_PROGRESS → NEEDS_MATERIALS / BLOCKED → DONE → VERIFIED`, estimate (minutes and material cents), cost code. `TaskStatusEvent` keeps the history used for "time waiting on materials". |

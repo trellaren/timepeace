@@ -9,3 +9,4 @@ export * from "./tax";
 export * from "./taxPrep";
 export * from "./csv";
 export * from "./schemas";
+export * from "./team";

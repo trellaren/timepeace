@@ -30,6 +30,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     { href: "/payroll", label: "Payroll", show: can.payroll(role) },
     { href: "/finance", label: "Finance", show: can.finance(role) },
     { href: "/tax", label: "Tax", show: can.tax(role) },
+    { href: "/team", label: "Team", show: can.team(role) },
   ].filter((l) => l.show);
 
   return (

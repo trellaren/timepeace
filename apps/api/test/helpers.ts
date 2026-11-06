@@ -15,3 +15,11 @@ export async function loginAs(email: string) {
 }
 
 export const uuid = () => randomUUID();
+
+/** Caller with no session (public endpoints). */
+export const anon = () => createCaller({ auth: null });
+
+/** Caller for a raw session token, as a client holding it would be. */
+export async function callerFor(token: string) {
+  return createCaller({ auth: await resolveAuth(token) });
+}

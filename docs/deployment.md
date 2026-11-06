@@ -35,7 +35,7 @@ API (`timepeace-api`, Production):
 | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Storage access. The service key is sensitive and server-only. |
 | `STORAGE_DRIVER=supabase`, `STORAGE_BUCKET=timepeace` | |
 | `MAX_UPLOAD_BYTES=4194304` | |
-| `WEB_ORIGIN=https://timepeace-web.vercel.app` | CORS allowlist (comma-separated). |
+| `WEB_ORIGIN=https://timepeace-web.vercel.app` | CORS allowlist (comma-separated). The first entry is also the base of invite links unless `APP_URL` is set. |
 
 Web (`timepeace-web`, Production): `NEXT_PUBLIC_API_URL=https://timepeace-api.vercel.app` (baked in at build time).
 
@@ -56,7 +56,7 @@ Local copies of the secrets live in `.env.production` at the repo root (gitignor
 
 ## Deploying
 
-There's no Git integration yet, so deploys come from the CLI, run from the repo root:
+Manual deploys from the CLI, run from the repo root:
 
 ```bash
 npx vercel login                                   # once
@@ -64,13 +64,24 @@ VERCEL_ORG_ID=team_7DXtpHiOMKj0b6BDuujPUo69 VERCEL_PROJECT_ID=prj_qAsQCc8WySnD4S
 VERCEL_ORG_ID=team_7DXtpHiOMKj0b6BDuujPUo69 VERCEL_PROJECT_ID=prj_U4qvFSElSjkIXSXXYvrTUMxvcQQ1 npx vercel deploy --prod   # web
 ```
 
+Both projects deploy automatically from GitHub (`main` → production, other branches → protected previews). **Apply migrations to Supabase before merging code that needs them.**
+
 Order matters when URLs change: the web build bakes in the API URL, and the API's `WEB_ORIGIN` must list the web URL. Run migrations **before** deploying an API that needs them.
 
-To deploy on every push instead, install the Vercel GitHub app for `trellaren/timepeace` and run `npx vercel git connect` for each project.
+
+## Adding your company
+
+```bash
+set -a; source .env.production; set +a
+DATABASE_URL="$MIGRATE_DATABASE_URL" pnpm --filter @timepeace/db create-org -- \
+  --name "Your Company" --owner-email you@example.com --owner-name "Your Name" \
+  --timezone America/Denver --entity LLC_SINGLE --app-url https://timepeace-web.vercel.app
+```
+
+It prints a one-time owner invite link (valid 7 days). Open it, choose your password, then invite everyone else from **Team**. Options: `--pay-period WEEKLY|BIWEEKLY|SEMIMONTHLY`, `--week-starts-on 0-6`, `--overtime FLSA|CA`, `--entity SOLE_PROP|LLC_SINGLE|PARTNERSHIP|S_CORP|C_CORP`.
 
 ## Before real (non-demo) use
 
-- **Onboarding:** there's no sign-up or invite flow yet (Phase 2 Settings), so the only users are the seeded demo users.
 - **Login throttling:** add per-account and per-IP rate limiting on `auth.login` (strong passwords mitigate this for now).
 - **Backups:** turn on Supabase point-in-time recovery (paid add-on) or schedule `pg_dump`.
 - **Mobile distribution:** move from local Release builds to EAS Build and TestFlight.

@@ -14,6 +14,8 @@ export const env = {
   port: Number(process.env.API_PORT ?? process.env.PORT ?? 4000),
   webOrigin: (process.env.WEB_ORIGIN ?? "http://localhost:3000").split(",").map((s) => s.trim()).filter(Boolean),
   databaseUrl: process.env.DATABASE_URL,
+  /** Public web app URL used in invite links. Defaults to the first WEB_ORIGIN. */
+  appUrl: (process.env.APP_URL ?? (process.env.WEB_ORIGIN ?? "http://localhost:3000").split(",")[0]!.trim()).replace(/\/$/, ""),
   uploadDir: process.env.UPLOAD_DIR ?? path.resolve(import.meta.dirname, "../../../.data/uploads"),
   /** Largest accepted upload. Vercel Functions cap request bodies at 4.5 MB, so set ~4 MB there. */
   maxUploadBytes: Number(process.env.MAX_UPLOAD_BYTES ?? 10 * 1024 * 1024),

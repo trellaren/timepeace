@@ -1,6 +1,7 @@
 import { dbDate } from "@timepeace/db";
 import { workerProfileInput } from "@timepeace/shared";
 import { TRPCError } from "@trpc/server";
+import { audit } from "../lib/audit";
 import { db } from "../lib/db";
 import { authedProcedure, managerProcedure, roleProcedure, router } from "../trpc";
 
@@ -62,10 +63,20 @@ export const orgRouter = router({
         create: { orgId: ctx.auth.orgId, userId: input.userId, classification: input.classification, burdenBps: input.burdenBps },
         update: { classification: input.classification, burdenBps: input.burdenBps },
       });
+      const before = await tx.payRate.findFirst({ where: { workerProfileId: wp.id }, orderBy: { effectiveDate: "desc" } });
       await tx.payRate.upsert({
         where: { workerProfileId_effectiveDate: { workerProfileId: wp.id, effectiveDate: dbDate(input.effectiveDate) } },
         create: { workerProfileId: wp.id, effectiveDate: dbDate(input.effectiveDate), hourlyRateCents: input.hourlyRateCents },
         update: { hourlyRateCents: input.hourlyRateCents },
+      });
+      await audit(tx, {
+        orgId: ctx.auth.orgId,
+        actorId: ctx.auth.userId,
+        entityType: "WorkerProfile",
+        entityId: wp.id,
+        action: "payRate",
+        before: before ? { hourlyRateCents: before.hourlyRateCents } : null,
+        after: { hourlyRateCents: input.hourlyRateCents, effectiveDate: input.effectiveDate, classification: input.classification, burdenBps: input.burdenBps },
       });
       return { ok: true };
     });
