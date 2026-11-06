@@ -1,0 +1,21 @@
+# Never upload secrets, local data, or build artifacts to Vercel.
+.env
+.env.*
+!.env.example
+.data/
+uploads/
+**/node_modules
+**/.next
+**/dist
+**/.vercel
+**/.turbo
+apps/mobile/ios
+apps/mobile/android
+apps/mobile/.expo
+**/test-results
+**/playwright-report
+supabase/.temp
+*.p8
+*.p12
+*.key
+*.mobileprovision

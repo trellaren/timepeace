@@ -3,7 +3,9 @@
  * Dates are relative to today so the demo always has a current week, a week awaiting
  * approval, and an approved week ready for payroll export.
  *
- * All demo users share the password "timepeace".
+ * All demo users share the password "timepeace" locally. Seeding a database that is not on
+ * localhost (e.g. a hosted demo) requires SEED_ALLOW_REMOTE=1 and a SEED_PASSWORD of 12+ characters,
+ * because the default password is public.
  */
 import bcrypt from "bcryptjs";
 import {
@@ -24,7 +26,17 @@ import type { CostCategory, Role, TaskStatus } from "../src/generated/prisma/cli
 
 const prisma = createPrismaClient();
 const TZ = "America/Denver";
-const PASSWORD = "timepeace";
+function seedPassword(): string {
+  const url = process.env.DATABASE_URL ?? "";
+  const host = /@([^:/?]+)/.exec(url)?.[1] ?? "localhost";
+  const local = host === "localhost" || host === "127.0.0.1" || host === "::1";
+  if (local) return process.env.SEED_PASSWORD ?? "timepeace";
+  if (process.env.SEED_ALLOW_REMOTE !== "1") throw new Error(`Refusing to seed (and wipe) remote database host ${host}. Set SEED_ALLOW_REMOTE=1 if you mean it.`);
+  const pw = process.env.SEED_PASSWORD ?? "";
+  if (pw.length < 12) throw new Error("Seeding a remote database requires SEED_PASSWORD with at least 12 characters");
+  return pw;
+}
+const PASSWORD = seedPassword();
 
 // Deterministic PRNG so the seed is reproducible.
 let rngState = 42;
@@ -720,7 +732,8 @@ async function main() {
   }
 
   console.log(`Seeded "${org.name}" (${today}). Log in with any of:`);
-  for (const e of [...staff.map((s) => s.email), ...workers.map((w) => w.email)]) console.log(`  ${e} / ${PASSWORD}`);
+  const shown = PASSWORD === "timepeace" ? PASSWORD : "(SEED_PASSWORD)";
+  for (const e of [...staff.map((s) => s.email), ...workers.map((w) => w.email)]) console.log(`  ${e} / ${shown}`);
 }
 
 main()

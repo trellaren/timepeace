@@ -154,3 +154,12 @@ describe("tax center", () => {
     }
   });
 });
+
+describe("CPA package link", () => {
+  it("returns no link when storage can't sign URLs (local driver); clients fall back to the zip route", async () => {
+    const { caller } = await loginAs("owner@acme.test");
+    await expect(caller.tax.cpaPackageLink({ year })).resolves.toEqual({ url: null });
+    const worker = await loginAs("sam@acme.test");
+    await expect(worker.caller.tax.cpaPackageLink({ year })).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+});

@@ -28,7 +28,7 @@ export async function buildApp() {
     origin: (origin, cb) => cb(null, !origin || env.webOrigin.includes(origin)),
     credentials: false,
   });
-  await app.register(multipart, { limits: { fileSize: 10 * 1024 * 1024, files: 1 } });
+  await app.register(multipart, { limits: { fileSize: env.maxUploadBytes, files: 1 } });
 
   await app.register(fastifyTRPCPlugin, {
     prefix: "/trpc",
@@ -57,7 +57,13 @@ export async function buildApp() {
     if (!file) return reply.code(400).send({ error: "No file" });
     const ext = ALLOWED_UPLOAD_TYPES[file.mimetype];
     if (!ext) return reply.code(415).send({ error: `Unsupported type ${file.mimetype}` });
-    const data = await file.toBuffer();
+    let data: Buffer;
+    try {
+      data = await file.toBuffer();
+    } catch (err) {
+      if ((err as { code?: string }).code === "FST_REQ_FILE_TOO_LARGE") return reply.code(413).send({ error: `File is larger than ${Math.floor(env.maxUploadBytes / 1024 / 1024)} MB` });
+      throw err;
+    }
     const key = `${auth.orgId}/${new Date().toISOString().slice(0, 7)}/${randomUUID()}.${ext}`;
     await storage.put(key, data, file.mimetype);
     const obj = await db().fileObject.create({
@@ -72,7 +78,7 @@ export async function buildApp() {
     if (!f) return reply.code(404).send({ error: "Not found" });
     // Workers can only fetch their own uploads.
     if (auth.role === "WORKER" && f.uploadedById !== auth.userId) return reply.code(404).send({ error: "Not found" });
-    return reply.type(f.contentType).header("Cache-Control", "private, max-age=3600").send(storage.get(f.storageKey));
+    return reply.type(f.contentType).header("Cache-Control", "private, max-age=3600").send(await storage.read(f.storageKey));
   });
 
   app.get<{ Params: { id: string } }>("/payroll-exports/:id/download", async (req, reply) => {
