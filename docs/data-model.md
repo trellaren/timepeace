@@ -53,6 +53,12 @@ erDiagram
   Vendor ||--o{ Expense : paid
   FileObject ||--o{ Expense : receipt
 
+  Task ||--o{ TaskComment : discussion
+  User ||--o{ TaskComment : writes
+  TaskComment ||--o{ CommentAttachment : photos
+  FileObject ||--o| CommentAttachment : "photo / thumbnail"
+  User ||--o{ TaskCommentRead : "has read"
+
   ChecklistTemplate ||--o{ ChecklistTemplateItem : lists
   Project ||--o{ Walkthrough : inspected
   Walkthrough ||--o{ WalkthroughItemResult : records
@@ -86,5 +92,9 @@ erDiagram
 | `TaxYearSettings` | Per org × year: 1099 threshold, IRS mileage rate (milli-cents), effective tax rate for estimates, prior-year total tax and whether prior AGI exceeded $150k (safe harbor 110%). |
 | `EstimatedTaxPayment` | Org × year × quarter, amount and date paid. |
 | `ProcessedOp` | Dedupe ledger for offline ops. |
+| `FileObject` | A stored upload: `kind` is `RECEIPT`, `PHOTO` or `THUMBNAIL`. `deletedAt` marks a removed photo whose stored object was purged. |
+| `TaskComment` | A message on a task's discussion: `NOTE` or `QUESTION`, plain-text `body`, author. The `id` is a client UUID, so offline posts are idempotent. Questions carry `answeredAt` / `answeredById`. `createdAt` is when it was written (device time, never future); `receivedAt` is server time and drives unread markers and the 15-minute edit window. Removal blanks the body (kept in the AuditLog) and sets `deletedAt`. See [the plan](plans/task-discussions.md). |
+| `CommentAttachment` | A photo on a message: full-size and thumbnail `FileObject`s (each attachable once), dimensions and order. |
+| `TaskCommentRead` | When each person last read each task's discussion. |
 | `LoginThrottle` | Failed sign-in counters keyed by hashed email or client IP, with a 15-minute window and `lockedUntil`. See Auth in [architecture](architecture.md). |
-| `AuditLog` | Before/after and reason for contract value changes, budget lines, timesheet reviews, time-entry edits, expense reviews and payroll exports. |
+| `AuditLog` | Before/after and reason for contract value changes, budget lines, timesheet reviews, time-entry edits, expense reviews, payroll exports, and discussion message edits and removals. |

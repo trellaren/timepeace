@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { commentPayload } from "./discussion";
 import {
   CONTRACT_TYPES,
   COST_CATEGORIES,
@@ -185,6 +186,12 @@ export const outboxOp = z.discriminatedUnion("type", [
       receiptFileId: id.nullish(),
       spentOn: localDate,
     }),
+  }),
+  z.object({
+    opId: z.uuid(),
+    type: z.literal("comment.create"),
+    at: isoInstant,
+    payload: commentPayload,
   }),
 ]);
 export type OutboxOp = z.infer<typeof outboxOp>;

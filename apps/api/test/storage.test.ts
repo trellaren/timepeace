@@ -31,6 +31,38 @@ describe("supabase storage driver", () => {
     expect(url.searchParams.get("download")).toBe("Acme_2026.zip");
   });
 
+  it("signs many objects in one request, in the order asked", async () => {
+    const fetch = vi.fn(async () =>
+      Response.json([
+        { path: "org1/b.jpg", signedURL: "/object/sign/timepeace/org1/b.jpg?token=b", error: null },
+        { path: "org1/a.jpg", signedURL: "/object/sign/timepeace/org1/a.jpg?token=a", error: null },
+      ]),
+    );
+    vi.stubGlobal("fetch", fetch);
+    expect(await s.signedUrls!(["org1/a.jpg", "org1/b.jpg"], 3600)).toEqual([
+      "https://proj.supabase.co/storage/v1/object/sign/timepeace/org1/a.jpg?token=a",
+      "https://proj.supabase.co/storage/v1/object/sign/timepeace/org1/b.jpg?token=b",
+    ]);
+    const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://proj.supabase.co/storage/v1/object/sign/timepeace");
+    expect(JSON.parse(init.body as string)).toEqual({ expiresIn: 3600, paths: ["org1/a.jpg", "org1/b.jpg"] });
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json([{ path: "org1/a.jpg", signedURL: null, error: "Not found" }])));
+    await expect(s.signedUrls!(["org1/a.jpg"], 60)).rejects.toThrow(/Not found/);
+  });
+
+  it("deletes many objects in one request", async () => {
+    const fetch = vi.fn(async () => Response.json([]));
+    vi.stubGlobal("fetch", fetch);
+    await s.remove(["org1/a.jpg", "org1/a_t.jpg"]);
+    const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://proj.supabase.co/storage/v1/object/timepeace");
+    expect(init.method).toBe("DELETE");
+    expect(JSON.parse(init.body as string)).toEqual({ prefixes: ["org1/a.jpg", "org1/a_t.jpg"] });
+    await s.remove([]);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    await expect(s.remove(["../x"])).rejects.toThrow(/Invalid storage key/);
+  });
+
   it("rejects path traversal and odd keys before any request", async () => {
     const fetch = vi.fn();
     vi.stubGlobal("fetch", fetch);

@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import type { AuthInfo } from "../context";
 import { db, type Tx } from "../lib/db";
 import { assertProjectAccess, assertTaskAccess } from "./access";
+import { postComment } from "./discussion";
 import { assertPeriodOpen } from "./timesheet";
 
 /**
@@ -203,6 +204,10 @@ async function applyOp(tx: Tx, auth: AuthInfo, op: OutboxOp) {
           receiptFileId: p.receiptFileId,
         },
       });
+      return;
+    }
+    case "comment.create": {
+      await postComment(tx, auth, op.payload, at);
       return;
     }
   }
