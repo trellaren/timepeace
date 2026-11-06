@@ -42,6 +42,8 @@ function TaxCenter() {
   const tab = (params.get("tab") as Tab) ?? "overview";
   const go = (t: Tab, y = year) => router.replace(`/tax?tab=${t}&year=${y}`);
   const [err, setErr] = useState<string | null>(null);
+  const trpc = useTRPC();
+  const pkgLink = useMutation(trpc.tax.cpaPackageLink.mutationOptions());
 
   return (
     <>
@@ -58,12 +60,19 @@ function TaxCenter() {
               ))}
             </Select>
             <Button
-              onClick={() => {
+              disabled={pkgLink.isPending}
+              onClick={async () => {
                 setErr(null);
-                downloadFile(`/tax/${year}/cpa-package.zip`, `tax_package_${year}.zip`).catch((e) => setErr(errorMessage(e)));
+                try {
+                  const { url } = await pkgLink.mutateAsync({ year });
+                  if (url) window.location.assign(url); // signed storage link (hosted)
+                  else await downloadFile(`/tax/${year}/cpa-package.zip`, `tax_package_${year}.zip`);
+                } catch (e) {
+                  setErr(errorMessage(e));
+                }
               }}
             >
-              Download CPA package
+              {pkgLink.isPending ? "Preparing…" : "Download CPA package"}
             </Button>
           </>
         }

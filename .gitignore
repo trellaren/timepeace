@@ -46,3 +46,7 @@ uploads/
 .vscode/*
 !.vscode/extensions.json
 apps/web/next-env.d.ts
+
+# vercel build output
+.vercel/
+supabase/.temp/

@@ -5,6 +5,9 @@ import { z } from "zod";
 import { audit } from "../lib/audit";
 import { encryptField } from "../lib/crypto";
 import { db } from "../lib/db";
+import { storage } from "../lib/storage";
+import { buildCpaPackage } from "../services/cpaPackage";
+import { randomUUID } from "node:crypto";
 import { estimates, taxSettings, taxSummary, vendors1099, yearExpenses } from "../services/tax";
 import { roleProcedure, router } from "../trpc";
 
@@ -15,6 +18,19 @@ const taxCategoryId = z.string().refine((id) => !!taxCategoryById(id), "Unknown 
 
 export const taxRouter = router({
   categories: taxProcedure.query(() => TAX_CATEGORIES),
+
+  /**
+   * Hosted deployments can't return large bodies from a function, so the CPA package is written to
+   * storage and the client gets a 10-minute signed link. `url: null` means the storage driver can't
+   * sign links (local dev): download from GET /tax/:year/cpa-package.zip instead.
+   */
+  cpaPackageLink: taxProcedure.input(z.object({ year })).mutation(async ({ ctx, input }) => {
+    if (!storage.signedUrl) return { url: null };
+    const pkg = await buildCpaPackage(db(), ctx.auth.orgId, input.year);
+    const key = `${ctx.auth.orgId}/exports/${randomUUID()}/${pkg.filename}`;
+    await storage.put(key, Buffer.from(pkg.data), "application/zip");
+    return { url: await storage.signedUrl(key, 600, pkg.filename) };
+  }),
 
   summary: taxProcedure.input(z.object({ year })).query(({ ctx, input }) => taxSummary(db(), ctx.auth.orgId, input.year)),
 
